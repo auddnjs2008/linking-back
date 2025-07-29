@@ -22,10 +22,8 @@ export class AuthController {
 
   @Post('refresh')
   async rotateAccessToken(@Request() req) {
-    console.log(req);
-
     return {
-      accessToken: await this.authService.issueToken({ id: 1 }, false),
+      accessToken: await this.authService.issueToken(req.user, false),
     };
   }
 }
