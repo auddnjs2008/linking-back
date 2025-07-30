@@ -13,9 +13,12 @@ export default class User extends BaseTable {
   @Column({ unique: true })
   email: string;
 
-  @Column()
+  @Column({ nullable: true })
   @Exclude({ toPlainOnly: true })
   password: string;
+
+  @Column({ default: 'local' })
+  loginType: string; // 'local' | 'google' | 'github' 등
 
   @Column({ default: 'https://github.com/shadcn.png' })
   profile: string;

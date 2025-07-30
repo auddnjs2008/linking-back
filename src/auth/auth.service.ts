@@ -128,4 +128,37 @@ export class AuthService {
       accessToken: await this.issueToken(user, false),
     };
   }
+
+  async handleGoogleUser(googleUser: any) {
+    const { email, firstName, lastName } = googleUser;
+
+    // 기존 사용자인지 확인
+    let user = await this.userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      // 새 사용자 생성 - firstName과 lastName을 name으로 결합
+      const fullName = `${lastName} ${firstName}`.trim();
+      user = await this.userService.create({
+        email,
+        name: fullName,
+        password: null, // Google OAuth 사용자는 비밀번호 없음
+        loginType: 'google', // 로그인 타입 설정
+      });
+    }
+
+    // JWT 토큰 발급
+    const accessToken = await this.issueToken(user, false);
+    const refreshToken = await this.issueToken(user, true);
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        loginType: user.loginType,
+      },
+      accessToken,
+      refreshToken,
+    };
+  }
 }
