@@ -42,4 +42,18 @@ export class UserService {
 
     return this.userRepository.findOne({ where: { email } });
   }
+
+  async findAll() {
+    return this.userRepository.find();
+  }
+
+  async findOne(id: number) {
+    const user = this.userRepository.findOne({ where: { id } });
+
+    if (!user) {
+      throw new BadRequestException('존재하는 유저 아이디가 없습니다.');
+    }
+
+    return user;
+  }
 }

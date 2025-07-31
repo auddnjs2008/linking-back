@@ -130,7 +130,7 @@ export class AuthService {
   }
 
   async handleGoogleUser(googleUser: any) {
-    const { email, firstName, lastName } = googleUser;
+    const { email, firstName, lastName, profile } = googleUser;
 
     // 기존 사용자인지 확인
     let user = await this.userRepository.findOne({ where: { email } });
@@ -143,6 +143,7 @@ export class AuthService {
         name: fullName,
         password: null, // Google OAuth 사용자는 비밀번호 없음
         loginType: 'google', // 로그인 타입 설정
+        profile, // Google 프로필 이미지
       });
     }
 
@@ -156,6 +157,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         loginType: user.loginType,
+        profile: user.profile,
       },
       accessToken,
       refreshToken,

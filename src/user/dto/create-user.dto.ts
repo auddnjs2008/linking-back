@@ -14,4 +14,8 @@ export class CreateUserDto {
   @IsString()
   @IsOptional()
   loginType?: string;
+
+  @IsString()
+  @IsOptional()
+  profile?: string;
 }

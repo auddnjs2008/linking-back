@@ -25,12 +25,13 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     done: VerifyCallback,
   ) {
     // Google OAuth에서 받은 프로필 정보를 처리
-    const { name, emails } = profile;
+    const { name, emails, photos } = profile;
 
     const user = {
       email: emails[0].value,
       firstName: name.givenName || '',
       lastName: name.familyName || '',
+      profile: photos?.[0]?.value || 'https://github.com/shadcn.png', // Google 프로필 이미지
       accessToken,
     };
 
