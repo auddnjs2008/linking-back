@@ -6,3 +6,10 @@ export const Authorization = createParamDecorator(
     return request.headers['authorization'];
   },
 );
+
+export const CurrentUser = createParamDecorator(
+  (data: any, context: ExecutionContext) => {
+    const request = context.switchToHttp().getRequest();
+    return request.user;
+  },
+);

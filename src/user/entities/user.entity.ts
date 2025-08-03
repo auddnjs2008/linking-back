@@ -1,6 +1,7 @@
 import { BaseTable } from 'src/common/entities/base-table.entity';
-import { Column, Entity, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
+import { Link } from 'src/link/entity/link.entity';
 
 @Entity()
 export default class User extends BaseTable {
@@ -22,4 +23,7 @@ export default class User extends BaseTable {
 
   @Column({ default: 'https://github.com/shadcn.png' })
   profile: string;
+
+  @OneToMany(() => Link, (link) => link.user)
+  createdLinks: Link[];
 }
