@@ -5,6 +5,8 @@ import { Repository } from 'typeorm';
 import { CreateLinkDto } from './dto/create-link.dto';
 import User from 'src/user/entities/user.entity';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import PagePaginationDto from 'src/common/dto/page-pagination.dto';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class LinkService {
@@ -13,10 +15,36 @@ export class LinkService {
     private readonly linkRepository: Repository<Link>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    private readonly commonService: CommonService,
   ) {}
 
   async findAll() {
-    return this.linkRepository.find({ relations: ['user'] });
+    // return this.linkRepository.find({ relations: ['user'] });
+    const qb = this.linkRepository.createQueryBuilder();
+    return qb.leftJoinAndSelect('link.user', 'user').getMany();
+  }
+
+  async findByPagination(pagePaginationDto: PagePaginationDto) {
+    const { page, take } = pagePaginationDto;
+
+    const qb = this.linkRepository.createQueryBuilder('link');
+    qb.leftJoinAndSelect('link.user', 'user');
+
+    this.commonService.applyPagePagination(qb, pagePaginationDto);
+
+    const [links, total] = await qb.getManyAndCount();
+
+    return {
+      data: links,
+      meta: {
+        page,
+        take,
+        total,
+        totalPages: Math.ceil(total / take),
+        hasNextPage: page < Math.ceil(total / take),
+        hasPrevPage: page > 1,
+      },
+    };
   }
 
   async findOne(id: number) {

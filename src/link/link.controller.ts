@@ -2,19 +2,32 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   Param,
   ParseIntPipe,
   Patch,
   Post,
+  Query,
 } from '@nestjs/common';
 import { LinkService } from './link.service';
 import { CreateLinkDto } from './dto/create-link.dto';
 import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 import { UpdateLinkDto } from './dto/update-link.dto';
+import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 
 @Controller('link')
 export class LinkController {
   constructor(private readonly linkService: LinkService) {}
+
+  @Get()
+  findAll() {
+    return this.linkService.findAll();
+  }
+
+  @Get('pagination')
+  findAllByPagination(@Query() pagePaginationDto: PagePaginationDto) {
+    return this.linkService.findByPagination(pagePaginationDto);
+  }
 
   @Post()
   createLink(
