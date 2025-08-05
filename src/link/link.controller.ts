@@ -14,6 +14,7 @@ import { CreateLinkDto } from './dto/create-link.dto';
 import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
+import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 
 @Controller('link')
 export class LinkController {
@@ -27,6 +28,11 @@ export class LinkController {
   @Get('pagination')
   findAllByPagination(@Query() pagePaginationDto: PagePaginationDto) {
     return this.linkService.findByPagination(pagePaginationDto);
+  }
+
+  @Get('cursor-pagination')
+  findAllByCursor(@Query() cursorPaginationDto: CursorPagePaginationDto) {
+    return this.linkService.findByCursorPagination(cursorPaginationDto);
   }
 
   @Post()

@@ -7,6 +7,7 @@ import User from 'src/user/entities/user.entity';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
+import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 
 @Injectable()
 export class LinkService {
@@ -43,6 +44,31 @@ export class LinkService {
         totalPages: Math.ceil(total / take),
         hasNextPage: page < Math.ceil(total / take),
         hasPrevPage: page > 1,
+      },
+    };
+  }
+
+  async findByCursorPagination(dto: CursorPagePaginationDto) {
+    const qb = this.linkRepository.createQueryBuilder('link');
+    qb.leftJoinAndSelect('link.user', 'user');
+    this.commonService.applyCursorPagination(qb, dto);
+
+    // 다음 페이지 확인을 위해 1개 더 가져옴
+    qb.take(dto.take + 1);
+    const links = await qb.getMany();
+
+    // 다음 페이지 존재 여부 확인
+    const hasNextPage = links.length > dto.take;
+    const data = hasNextPage ? links.slice(0, dto.take) : links;
+
+    return {
+      data,
+      meta: {
+        hasNextPage,
+        nextCursor: hasNextPage ? data[data.length - 1].id : null,
+        order: dto.order,
+        take: dto.take,
+        currentCursor: dto.id || null,
       },
     };
   }
