@@ -72,6 +72,24 @@ export class GroupService {
     };
   }
 
+  async findItem(groupId: number) {
+    const group = await this.groupRepository.findOne({
+      where: { id: groupId },
+      relations: [
+        'bookmarkedUsers',
+        'bookmarkedUsers.user',
+        'linkedLinks',
+        'user',
+      ],
+    });
+
+    if (!group) {
+      throw new BadRequestException('해당 그룹을 찾을 수 없습니다.');
+    }
+
+    return group;
+  }
+
   async create(dto: CreateGroupDto, userId: number) {
     const { title, description, linkIds } = dto;
 
