@@ -15,6 +15,7 @@ import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
+import { UserId } from 'src/user/decorator/user-id.decorator';
 
 @Controller('link')
 export class LinkController {
@@ -54,5 +55,18 @@ export class LinkController {
   @Delete(':id')
   delete(@Param('id', ParseIntPipe) id: number) {
     return this.linkService.delete(id);
+  }
+
+  @Post(':id/bookmark')
+  createBookmark(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() userId: number,
+  ) {
+    return this.linkService.toggleBookmark(id, userId, true);
+  }
+
+  @Post(':id/unbookmark')
+  unBookmark(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.linkService.toggleBookmark(id, userId, false);
   }
 }

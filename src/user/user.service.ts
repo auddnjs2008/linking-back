@@ -1,10 +1,11 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import User from './entities/user.entity';
+import User from './entity/user.entity';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @Injectable()
 export class UserService {
@@ -41,6 +42,31 @@ export class UserService {
     });
 
     return this.userRepository.findOne({ where: { email } });
+  }
+
+  async update(updateUserDto: UpdateUserDto, userId: number) {
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('존재하지 않는 유저입니다.');
+    }
+
+    const newPassword = updateUserDto.password
+      ? await bcrypt.hash(
+          updateUserDto.password,
+          this.configService.get<string>('HASH_ROUNDS'),
+        )
+      : user.password;
+
+    await this.userRepository.update(
+      { id: userId },
+      { ...updateUserDto, password: newPassword },
+    );
+
+    // 업데이트된 사용자 정보 반환
+    const updatedUser = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+    return updatedUser;
   }
 
   async findAll() {

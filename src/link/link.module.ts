@@ -3,12 +3,16 @@ import { LinkService } from './link.service';
 import { LinkController } from './link.controller';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { Link } from './entity/link.entity';
-import User from 'src/user/entities/user.entity';
+import User from 'src/user/entity/user.entity';
 import { CommonModule } from 'src/common/common.module';
+import { LinkUserBookMark } from './entity/link-user-bookmark.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Link, User]), CommonModule],
+  imports: [
+    TypeOrmModule.forFeature([Link, User, LinkUserBookMark]),
+    CommonModule,
+  ],
   providers: [LinkService],
   controllers: [LinkController],
 })
-export class LinkModle {}
+export class LinkModule {}

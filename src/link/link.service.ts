@@ -3,11 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Link } from './entity/link.entity';
 import { Repository } from 'typeorm';
 import { CreateLinkDto } from './dto/create-link.dto';
-import User from 'src/user/entities/user.entity';
+import User from 'src/user/entity/user.entity';
 import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
+import { LinkUserBookMark } from './entity/link-user-bookmark.entity';
 
 @Injectable()
 export class LinkService {
@@ -16,6 +17,8 @@ export class LinkService {
     private readonly linkRepository: Repository<Link>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
+    @InjectRepository(LinkUserBookMark)
+    private readonly linkUserBookMarkRepository: Repository<LinkUserBookMark>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -116,5 +119,50 @@ export class LinkService {
 
     await this.linkRepository.delete(id);
     return id;
+  }
+
+  async getbookmarkRecord(linkId: number, userId: number) {
+    return this.linkUserBookMarkRepository
+      .createQueryBuilder('lbm')
+      .leftJoinAndSelect('lbm.link', 'link')
+      .leftJoinAndSelect('lbm.user', 'user')
+      .where('link.id = :linkId', { linkId })
+      .andWhere('user.id = :userId', { userId })
+      .getOne();
+  }
+
+  async toggleBookmark(linkId: number, userId: number, isBookmarked: boolean) {
+    const link = await this.linkRepository.findOne({ where: { id: linkId } });
+
+    if (!link) {
+      throw new BadRequestException('일치하는 링크가 없습니다.');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('일치하는 유저가 없습니다.');
+    }
+
+    const linkUserRecord = await this.getbookmarkRecord(linkId, userId);
+
+    if (linkUserRecord) {
+      await this.linkUserBookMarkRepository.update(
+        { link, user },
+        { isBookmarked },
+      );
+    } else {
+      await this.linkUserBookMarkRepository.save({
+        link,
+        user,
+        isBookmarked,
+      });
+    }
+
+    const result = await this.getbookmarkRecord(linkId, userId);
+
+    return {
+      isBookmarked: result.isBookmarked,
+    };
   }
 }

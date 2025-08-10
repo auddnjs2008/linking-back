@@ -7,12 +7,13 @@ import {
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
-import User from './user/entities/user.entity';
+import User from './user/entity/user.entity';
 import { Link } from './link/entity/link.entity';
+import { LinkUserBookMark } from './link/entity/link-user-bookmark.entity';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
-import { LinkModle } from './link/link.module';
+import { LinkModule } from './link/link.module';
 
 @Module({
   imports: [
@@ -37,14 +38,14 @@ import { LinkModle } from './link/link.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [User, Link],
+        entities: [User, Link, LinkUserBookMark],
         synchronize: true,
       }),
       inject: [ConfigService],
     }),
     UserModule,
     AuthModule,
-    LinkModle,
+    LinkModule,
   ],
   controllers: [],
   providers: [],
