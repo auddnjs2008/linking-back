@@ -9,16 +9,36 @@ import {
   Res,
 } from '@nestjs/common';
 import { Response } from 'express';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { Authorization } from './decorator/authorization.decorator';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { GoogleAuthGuard } from './guard/googleAuth.guard';
+import { AuthResponseDto, TokenResponseDto } from './dto/auth-response.dto';
 
+@ApiTags('인증')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @ApiOperation({
+    summary: '사용자 등록',
+    description: '새로운 사용자를 등록합니다.',
+  })
+  @ApiResponse({
+    status: 201,
+    description: '사용자 등록 성공',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: '잘못된 요청',
+  })
+  @ApiResponse({
+    status: 409,
+    description: '이미 존재하는 사용자',
+  })
   registerUser(
     @Authorization() token: string,
     @Body() registerUserDto: RegisterUserDto,
@@ -27,6 +47,19 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @ApiOperation({
+    summary: '액세스 토큰 갱신',
+    description: '리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '토큰 갱신 성공',
+    type: TokenResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: '인증 실패',
+  })
   async rotateAccessToken(@Request() req) {
     return {
       accessToken: await this.authService.issueToken(req.user, false),
@@ -35,6 +68,14 @@ export class AuthController {
 
   @Get('/google/callback')
   @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Google OAuth 콜백',
+    description: 'Google OAuth 인증 완료 후 처리',
+  })
+  @ApiResponse({
+    status: 302,
+    description: '프론트엔드로 리다이렉트',
+  })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     // Google OAuth 인증이 완료되면 req.user에 Google 사용자 정보가 들어있음
     const googleUser = req.user;

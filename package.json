@@ -38,6 +38,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
+    "@nestjs/swagger": "^11.2.0",
     "@nestjs/testing": "^10.0.0",
     "@types/bcrypt": "^6.0.0",
     "@types/express": "^5.0.0",

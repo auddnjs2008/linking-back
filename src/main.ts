@@ -1,11 +1,38 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
-  await app.listen(process.env.PORT ?? 3000);
 
+  // Swagger 설정
+  const config = new DocumentBuilder()
+    .setTitle('Linking Back API')
+    .setDescription('링크 공유 및 그룹 관리를 위한 REST API')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'JWT 토큰을 입력하세요',
+        in: 'header',
+      },
+      'access-token',
+    )
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+    customSiteTitle: 'Linking Back API Docs',
+  });
+
+  // 전역 파이프 설정
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -15,5 +42,8 @@ async function bootstrap() {
       },
     }),
   );
+
+  await app.listen(process.env.PORT ?? 3000);
 }
+
 bootstrap();
