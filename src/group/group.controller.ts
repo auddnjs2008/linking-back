@@ -1,7 +1,8 @@
-import { Controller, Get, Query } from '@nestjs/common';
+import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { GroupService } from './group.service';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
+import { CreateGroupDto } from './dto/create-group.dto';
 
 @Controller('group')
 export class GroupController {
@@ -21,5 +22,13 @@ export class GroupController {
       cursorPaginationDto,
       user.sub,
     );
+  }
+
+  @Post()
+  create(
+    @CurrentUser() user: { sub: number },
+    @Body() createGroupDto: CreateGroupDto,
+  ) {
+    return this.groupService.create(createGroupDto, user.sub);
   }
 }
