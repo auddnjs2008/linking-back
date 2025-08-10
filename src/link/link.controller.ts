@@ -32,8 +32,14 @@ export class LinkController {
   }
 
   @Get('cursor-pagination')
-  findAllByCursor(@Query() cursorPaginationDto: CursorPagePaginationDto) {
-    return this.linkService.findByCursorPagination(cursorPaginationDto);
+  findAllByCursor(
+    @CurrentUser() user: { sub: number },
+    @Query() cursorPaginationDto: CursorPagePaginationDto,
+  ) {
+    return this.linkService.findByCursorPagination(
+      cursorPaginationDto,
+      user.sub,
+    );
   }
 
   @Post()

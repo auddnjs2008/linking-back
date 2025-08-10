@@ -1,0 +1,37 @@
+import { BaseTable } from 'src/common/entities/base-table.entity';
+import { Link } from 'src/link/entity/link.entity';
+import {
+  Column,
+  Entity,
+  JoinTable,
+  ManyToMany,
+  ManyToOne,
+  OneToMany,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
+import { GroupUserBookmark } from './group-user-bookmark.entity';
+import User from 'src/user/entity/user.entity';
+
+@Entity()
+export class Group extends BaseTable {
+  @PrimaryGeneratedColumn()
+  id: number;
+
+  @Column()
+  title: string;
+
+  @Column()
+  description: string;
+
+  @ManyToOne(() => User, (user) => user.createdGroups, {
+    onDelete: 'CASCADE',
+  })
+  user: User;
+
+  @ManyToMany(() => Link, (link) => link.linkedGroups)
+  @JoinTable()
+  linkedLinks: Link[];
+
+  @OneToMany(() => GroupUserBookmark, (gub) => gub.group)
+  bookmarkedUsers: GroupUserBookmark[];
+}

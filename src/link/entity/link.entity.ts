@@ -3,11 +3,13 @@ import User from 'src/user/entity/user.entity';
 import {
   Column,
   Entity,
+  ManyToMany,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { LinkUserBookMark } from './link-user-bookmark.entity';
+import { Group } from 'src/group/entity/group.entity';
 
 @Entity()
 export class Link extends BaseTable {
@@ -33,4 +35,7 @@ export class Link extends BaseTable {
 
   @OneToMany(() => LinkUserBookMark, (lub) => lub.link)
   bookmarkedUsers: LinkUserBookMark[];
+
+  @ManyToMany(() => Group, (group) => group.linkedLinks)
+  linkedGroups: Group[];
 }

@@ -14,6 +14,9 @@ import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { LinkModule } from './link/link.module';
+import { Group } from './group/entity/group.entity';
+import { GroupModule } from './group/group.module';
+import { GroupUserBookmark } from './group/entity/group-user-bookmark.entity';
 
 @Module({
   imports: [
@@ -38,7 +41,7 @@ import { LinkModule } from './link/link.module';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [User, Link, LinkUserBookMark],
+        entities: [User, Link, LinkUserBookMark, Group, GroupUserBookmark],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -46,6 +49,7 @@ import { LinkModule } from './link/link.module';
     UserModule,
     AuthModule,
     LinkModule,
+    GroupModule,
   ],
   controllers: [],
   providers: [],

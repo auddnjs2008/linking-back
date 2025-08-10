@@ -51,10 +51,19 @@ export class LinkService {
     };
   }
 
-  async findByCursorPagination(dto: CursorPagePaginationDto) {
+  async findByCursorPagination(dto: CursorPagePaginationDto, userId: number) {
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
+    qb.leftJoinAndSelect('link.bookmarkedUsers', 'bookmarkedUsers');
     this.commonService.applyCursorPagination(qb, dto);
+
+    const curUser = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    if (!curUser) {
+      throw new BadRequestException('현재 유저는 존재하지 않습니다.');
+    }
 
     // 다음 페이지 확인을 위해 1개 더 가져옴
     qb.take(dto.take + 1);
@@ -63,9 +72,18 @@ export class LinkService {
     // 다음 페이지 존재 여부 확인
     const hasNextPage = links.length > dto.take;
     const data = hasNextPage ? links.slice(0, dto.take) : links;
+    const filteredData = data.map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      author: item.user,
+      isBookmarked: item.bookmarkedUsers.some(
+        (bookmark) => bookmark.user.id === curUser.id && bookmark.isBookmarked,
+      ),
+    }));
 
     return {
-      data,
+      data: filteredData,
       meta: {
         hasNextPage,
         nextCursor: hasNextPage ? data[data.length - 1].id : null,
