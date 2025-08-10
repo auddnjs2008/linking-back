@@ -17,6 +17,8 @@ import { LinkModule } from './link/link.module';
 import { Group } from './group/entity/group.entity';
 import { GroupModule } from './group/group.module';
 import { GroupUserBookmark } from './group/entity/group-user-bookmark.entity';
+import { APP_GUARD } from '@nestjs/core';
+import { AuthGuard } from './auth/guard/Auth.guard';
 
 @Module({
   imports: [
@@ -52,7 +54,12 @@ import { GroupUserBookmark } from './group/entity/group-user-bookmark.entity';
     GroupModule,
   ],
   controllers: [],
-  providers: [],
+  providers: [
+    {
+      provide: APP_GUARD,
+      useClass: AuthGuard,
+    },
+  ],
 })
 export class AppModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
