@@ -21,3 +21,11 @@ export class TokenResponseDto {
   @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...' })
   accessToken: string;
 }
+
+export class LoginResponseDto {
+  @ApiProperty({ example: 'asdfasdf..' })
+  accessToken: string;
+
+  @ApiProperty()
+  refreshToken: string;
+}

@@ -14,7 +14,12 @@ import { AuthService } from './auth.service';
 import { Authorization } from './decorator/authorization.decorator';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { GoogleAuthGuard } from './guard/googleAuth.guard';
-import { AuthResponseDto, TokenResponseDto } from './dto/auth-response.dto';
+import {
+  AuthResponseDto,
+  LoginResponseDto,
+  TokenResponseDto,
+} from './dto/auth-response.dto';
+import { Public } from './decorator/public.decorator';
 
 @ApiTags('인증')
 @Controller('auth')
@@ -22,6 +27,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('register')
+  @Public()
   @ApiOperation({
     summary: '사용자 등록',
     description: '새로운 사용자를 등록합니다.',
@@ -47,6 +53,7 @@ export class AuthController {
   }
 
   @Post('refresh')
+  @Public()
   @ApiOperation({
     summary: '액세스 토큰 갱신',
     description: '리프레시 토큰을 사용하여 새로운 액세스 토큰을 발급받습니다.',
@@ -66,7 +73,24 @@ export class AuthController {
     };
   }
 
+  @Post('login')
+  @Public()
+  @ApiOperation({
+    summary: '로그인',
+    description:
+      'Authorization: Basic token(이메일:패스워드 base64인코딩) 한 걸 기본으로 로그인',
+  })
+  @ApiResponse({
+    status: 201,
+    description: '로그인 성공',
+    type: LoginResponseDto,
+  })
+  async login(@Authorization() token: string) {
+    return this.authService.login(token);
+  }
+
   @Get('/google/callback')
+  @Public()
   @UseGuards(GoogleAuthGuard)
   @ApiOperation({
     summary: 'Google OAuth 콜백',

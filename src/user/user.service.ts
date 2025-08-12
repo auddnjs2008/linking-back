@@ -16,7 +16,7 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const { name, email, password, loginType = 'local' } = createUserDto;
+    const { name, email, password, loginType } = createUserDto;
     const user = await this.userRepository.findOne({
       where: { email },
     });
@@ -27,10 +27,11 @@ export class UserService {
 
     // OAuth 사용자인 경우 비밀번호 해싱하지 않음
     let hashedPassword = null;
+
     if (password) {
       hashedPassword = await bcrypt.hash(
         password,
-        this.configService.get<string>('HASH_ROUNDS'),
+        +this.configService.get<string>('HASH_ROUNDS'),
       );
     }
 

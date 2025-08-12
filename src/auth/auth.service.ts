@@ -5,7 +5,7 @@ import {
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
-import User from 'src/user/entity/user.entity';
+import User, { LoginType } from 'src/user/entity/user.entity';
 import { Repository } from 'typeorm';
 import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
@@ -43,7 +43,7 @@ export class AuthService {
       throw new BadRequestException('토큰 포맷이 잘못되었습니다.');
     }
 
-    const [email, password] = decoded;
+    const [email, password] = tokenSplit;
 
     return { email, password };
   }
@@ -97,7 +97,12 @@ export class AuthService {
 
   async register(rawToken: string, registerUserDto: RegisterUserDto) {
     const { email, password } = this.parseBasicToken(rawToken);
-    return this.userService.create({ email, password, ...registerUserDto });
+    return this.userService.create({
+      email,
+      password,
+      loginType: LoginType.LOCAL,
+      ...registerUserDto,
+    });
   }
 
   async issueToken(user: { id: number }, isRefreshToken: boolean) {
@@ -142,7 +147,7 @@ export class AuthService {
         email,
         name: fullName,
         password: null, // Google OAuth 사용자는 비밀번호 없음
-        loginType: 'google', // 로그인 타입 설정
+        loginType: LoginType.GOGGLE, // 로그인 타입 설정
         profile, // Google 프로필 이미지
       });
     }

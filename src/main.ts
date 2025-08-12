@@ -6,6 +6,11 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
+  // cors 설정
+  app.enableCors({
+    origin: ['http://localhost:5173'],
+  });
+
   // Swagger 설정
   const config = new DocumentBuilder()
     .setTitle('Linking Back API')
@@ -43,7 +48,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(process.env.PORT ?? 3000);
+  await app.listen(process.env.PORT ?? 5500);
 }
 
 bootstrap();

@@ -6,6 +6,11 @@ import { GroupUserBookmark } from 'src/group/entity/group-user-bookmark.entity';
 import { LinkUserBookMark } from 'src/link/entity/link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
 
+export enum LoginType {
+  LOCAL = 'local',
+  GOGGLE = 'google',
+}
+
 @Entity()
 export default class User extends BaseTable {
   @PrimaryGeneratedColumn()
@@ -21,8 +26,12 @@ export default class User extends BaseTable {
   @Exclude({ toPlainOnly: true })
   password: string;
 
-  @Column({ default: 'local' })
-  loginType: string; // 'local' | 'google' | 'github' 등
+  @Column({
+    type: 'enum',
+    enum: LoginType,
+    default: LoginType.LOCAL,
+  })
+  loginType: LoginType;
 
   @Column({ default: 'https://github.com/shadcn.png' })
   profile: string;
