@@ -11,6 +11,7 @@ import * as bcrypt from 'bcrypt';
 import { ConfigService } from '@nestjs/config';
 import { UserService } from 'src/user/user.service';
 import { RegisterUserDto } from './dto/register-user.dto';
+import { Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -132,6 +133,17 @@ export class AuthService {
       refreshToken: await this.issueToken(user, true),
       accessToken: await this.issueToken(user, false),
     };
+  }
+
+  redirectToError(res: Response, errorCode: string, message: string) {
+    const errorUrl = `${this.configService.get<string>('FRONTEND_URL')}/auth/error?error=${errorCode} & message=${encodeURIComponent(message)}`;
+    return res.redirect(errorUrl);
+  }
+
+  redirectToSuccess(res: Response) {
+    return res.redirect(
+      `${this.configService.get<string>('FRONTEND_URL')}/auth/success`,
+    );
   }
 
   async handleGoogleUser(googleUser: any) {

@@ -89,6 +89,24 @@ export class AuthController {
     return this.authService.login(token);
   }
 
+  //-------------------- Google 로그인 ----------------------
+
+  // 구글 로그인 시작포인트
+  @Get('/google')
+  @Public()
+  @UseGuards(GoogleAuthGuard)
+  @ApiOperation({
+    summary: 'Google Oauth 시작',
+    description: 'Google Oauth 인증을 시작합니다.',
+  })
+  @ApiResponse({
+    status: 302,
+    description: 'Google 로그인 페이지로 리다이렉트',
+  })
+  async googleAuth() {}
+
+  //---- 구글 리다이렉트
+
   @Get('/google/callback')
   @Public()
   @UseGuards(GoogleAuthGuard)
@@ -101,15 +119,66 @@ export class AuthController {
     description: '프론트엔드로 리다이렉트',
   })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
-    // Google OAuth 인증이 완료되면 req.user에 Google 사용자 정보가 들어있음
-    const googleUser = req.user;
+    try {
+      // Google OAuth 인증이 완료되면 req.user에 Google 사용자 정보가 들어있음
+      const googleUser = req.user;
+      if (!googleUser) {
+        this.authService.redirectToError(
+          res,
+          'unknown_error',
+          'Google 사용자 정보를 가져올 수 없습니다.',
+        );
+      }
 
-    // AuthService를 통해 사용자 처리 및 토큰 발급
-    const result = await this.authService.handleGoogleUser(googleUser);
+      // AuthService를 통해 사용자 처리 및 토큰 발급
+      const result = await this.authService.handleGoogleUser(googleUser);
 
-    // 방법 1: 프론트엔드로 리다이렉트 (토큰을 URL 파라미터로 전달)
-    const redirectUrl = `${process.env.FRONTEND_URL}/auth/callback?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
+      if (!result || !result.accessToken) {
+        this.authService.redirectToError(
+          res,
+          'issue_token',
+          '토큰 발급에 실패했습니다.',
+        );
+      }
 
-    return res.redirect(redirectUrl);
+      //토큰을 쿠키에 저장(httpOnly를 false로 설정)
+      res.cookie('accessToken', result.accessToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 15 * 60 * 1000, // 15분
+      });
+
+      res.cookie('refreshToken', result.refreshToken, {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        maxAge: 7 * 24 * 60 * 60 * 1000, //7일
+      });
+
+      return this.authService.redirectToSuccess(res);
+    } catch (error) {
+      console.error('Google Oauth callback error:', error);
+
+      // 에러 타입에 따른 처리
+      let errorCode = 'unknown_error';
+      let errorMessage = '알 수 없는 오류가 발생했습니다.';
+
+      if (error.name === 'ValidationError') {
+        errorCode = 'validation_error';
+        errorMessage = '사용자 정보 검증에 실패했습니다.';
+      } else if (error.name === 'DatabaseError') {
+        errorCode = 'database_error';
+        errorMessage = '데이터베이스 오류가 발생했습니다.';
+      } else if (error.status === 409) {
+        errorCode = 'user_exists';
+        errorMessage = '이미 존재하는 사용자입니다.';
+      } else if (error.status === 400) {
+        errorCode = 'bad_request';
+        errorMessage = '잘못된 요청입니다.';
+      }
+
+      return this.authService.redirectToError(res, errorCode, errorMessage);
+    }
   }
 }
