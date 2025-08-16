@@ -107,6 +107,7 @@ export class AuthService {
   }
 
   async issueToken(user: { id: number }, isRefreshToken: boolean) {
+    console.log(user, 'user');
     const accessTokenSecret = this.configService.get<string>(
       'ACCESS_TOKEN_SECRET',
     );
@@ -136,7 +137,7 @@ export class AuthService {
   }
 
   redirectToError(res: Response, errorCode: string, message: string) {
-    const errorUrl = `${this.configService.get<string>('FRONTEND_URL')}/auth/error?error=${errorCode} & message=${encodeURIComponent(message)}`;
+    const errorUrl = `${this.configService.get<string>('FRONTEND_URL')}/auth/error?error=${errorCode}&message=${encodeURIComponent(message)}`;
     return res.redirect(errorUrl);
   }
 

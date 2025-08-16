@@ -10,6 +10,7 @@ import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 
 @ApiTags('사용자')
 @Controller('user')
@@ -28,6 +29,21 @@ export class UserController {
   })
   findAll() {
     return this.userService.findAll();
+  }
+
+  @Get('me')
+  @ApiOperation({
+    summary: '내 정보 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '내 정보 조회 성공',
+    type: UserResponseDto,
+  })
+  findMe(@CurrentUser() user: { sub: number }) {
+    console.log(user, 'user');
+
+    return this.userService.findOne(user.sub);
   }
 
   @Get(':id')

@@ -15,9 +15,9 @@ import { Authorization } from './decorator/authorization.decorator';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { GoogleAuthGuard } from './guard/googleAuth.guard';
 import {
-  AuthResponseDto,
   LoginResponseDto,
   TokenResponseDto,
+  RegisterResponseDto,
 } from './dto/auth-response.dto';
 import { Public } from './decorator/public.decorator';
 
@@ -35,7 +35,7 @@ export class AuthController {
   @ApiResponse({
     status: 201,
     description: '사용자 등록 성공',
-    type: AuthResponseDto,
+    type: RegisterResponseDto,
   })
   @ApiResponse({
     status: 400,
@@ -69,7 +69,10 @@ export class AuthController {
   })
   async rotateAccessToken(@Request() req) {
     return {
-      accessToken: await this.authService.issueToken(req.user, false),
+      accessToken: await this.authService.issueToken(
+        { id: req.user.sub },
+        false,
+      ),
     };
   }
 
@@ -117,6 +120,14 @@ export class AuthController {
   @ApiResponse({
     status: 302,
     description: '프론트엔드로 리다이렉트',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Google OAuth 에러',
+  })
+  @ApiResponse({
+    status: 500,
+    description: '서버 내부 에러',
   })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     try {

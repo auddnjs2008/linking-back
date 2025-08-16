@@ -25,7 +25,9 @@ export class BearerTokenMiddleware implements NestMiddleware {
 
     const token = this.validateBearerToken(authHeader);
     const decodedPayload = this.jwtService.decode(token);
-    if (decodedPayload.type !== 'refresh' || decodedPayload.type !== 'access') {
+
+    if (decodedPayload.type !== 'refresh' && decodedPayload.type !== 'access') {
+      console.log('lala');
       throw new BadRequestException('잘못된 토큰입니다.');
     }
 
