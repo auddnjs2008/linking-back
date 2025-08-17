@@ -166,9 +166,9 @@ export class LinkController {
   })
   createLink(
     @Body() createLinkDto: CreateLinkDto,
-    @CurrentUser() user: { id: number },
+    @CurrentUser() user: { sub: number },
   ) {
-    return this.linkService.create(createLinkDto, user.id);
+    return this.linkService.create(createLinkDto, user.sub);
   }
 
   @Patch(':id')

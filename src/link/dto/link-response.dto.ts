@@ -8,7 +8,10 @@ export class LinkResponseDto {
   title: string;
 
   @ApiProperty({ example: 'https://nestjs.com/' })
-  url: string;
+  linkUrl: string;
+
+  @ApiProperty({ example: 'https://nestjs.com/' })
+  thumbnail: string;
 
   @ApiProperty({ example: 'NestJS 프레임워크 공식 문서입니다.' })
   description: string;

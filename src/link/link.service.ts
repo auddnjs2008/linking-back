@@ -88,6 +88,8 @@ export class LinkService {
       id: item.id,
       title: item.title,
       description: item.description,
+      linkUrl: item.linkUrl,
+      thumbnail: item.thumbnail,
       author: item.user,
       isBookmarked: item.isBookmarked || false,
     }));
@@ -109,6 +111,7 @@ export class LinkService {
     userId: number,
     currentUser: { sub: number },
   ) {
+    console.log(dto, userId, currentUser);
     // 입력값 검증
     if (!userId || !currentUser?.sub) {
       throw new BadRequestException('유효하지 않은 사용자 정보입니다.');
@@ -145,11 +148,14 @@ export class LinkService {
     const hasNextPage = links.length > dto.take;
     const data = hasNextPage ? links.slice(0, dto.take) : links;
 
+    console.log(data, 'data');
     // 데이터 변환
     const filteredData = data.map((item: any) => ({
       id: item.id,
       title: item.title,
       description: item.description,
+      linkUrl: item.linkUrl,
+      thumbnail: item.thumbnail,
       author: item.user,
       isBookmarked: item.isBookmarked || false,
     }));
