@@ -25,6 +25,9 @@ export class Link extends BaseTable {
   @Column()
   linkUrl: string;
 
+  @Column()
+  thumbnail: string;
+
   @Column('simple-array', { default: [] })
   tags: string[];
 

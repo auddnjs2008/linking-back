@@ -179,14 +179,40 @@ export class LinkService {
       throw new BadRequestException('아이디에 맞는 사용자가 없습니다.');
     }
 
+    //썸네일 추출 서비스 호출
+    const thumbnail = await this.extractThumbnail(createLinkDto.linkUrl);
+
     // create()로 엔티티 인스턴스 생성
     const newLink = this.linkRepository.create({
       ...createLinkDto,
       user,
+      thumbnail,
     });
 
     // save()로 데이터베이스에 저장
     return this.linkRepository.save(newLink);
+  }
+
+  private async extractThumbnail(url: string): Promise<string> {
+    try {
+      //OPEN Graph 메타데이터에서 /섬네일 추출
+      const response = await fetch(url);
+      const html = await response.text();
+
+      //og:image 태그에서 썸네일  URL 추출
+      const ogImageMatch = html.match(
+        /<meta property="og:image" content="([^"]+)"/,
+      );
+      if (ogImageMatch) {
+        return ogImageMatch[1];
+      }
+
+      // 기본 썸네일 반환
+      return '';
+    } catch {
+      //에러 시 기본 썸네일 반환
+      return '';
+    }
   }
 
   async update(updateLinkDto: UpdateLinkDto, id: number) {
