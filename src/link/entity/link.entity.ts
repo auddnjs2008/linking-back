@@ -8,7 +8,7 @@ import {
   OneToMany,
   PrimaryGeneratedColumn,
 } from 'typeorm';
-import { LinkUserBookMark } from './link-user-bookmark.entity';
+import { LinkUserBookmark } from './link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
 
 @Entity()
@@ -33,8 +33,8 @@ export class Link extends BaseTable {
   })
   user: User;
 
-  @OneToMany(() => LinkUserBookMark, (lub) => lub.link)
-  bookmarkedUsers: LinkUserBookMark[];
+  @OneToMany(() => LinkUserBookmark, (lub) => lub.link)
+  bookmarkedUsers: LinkUserBookmark[];
 
   @ManyToMany(() => Group, (group) => group.linkedLinks)
   linkedGroups: Group[];

@@ -23,13 +23,10 @@ import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { UserId } from 'src/user/decorator/user-id.decorator';
-import {
-  LinkResponseDto,
-  LinkWithBookmarksResponseDto,
-} from './dto/link-response.dto';
+import { LinkResponseDto } from './dto/link-response.dto';
 import {
   PaginationResponseDto,
-  CursorPaginationResponseDto,
+  LinkCursorPaginationResponseDto,
 } from 'src/common/dto/pagination-response.dto';
 
 @ApiTags('링크')
@@ -82,17 +79,27 @@ export class LinkController {
     summary: '커서 페이지네이션으로 링크 조회',
     description: '커서 기반 페이지네이션을 사용하여 링크를 조회합니다.',
   })
-  @ApiQuery({ name: 'cursor', required: false, description: '커서 값' })
   @ApiQuery({
-    name: 'limit',
+    name: 'id',
+    required: false,
+    description: '마지막 데이터의 id 값',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: true,
+    enum: ['ASC', 'DESC'],
+    description: '정렬 순서',
+  })
+  @ApiQuery({
+    name: 'take',
     required: false,
     description: '페이지당 항목 수',
     example: 10,
   })
   @ApiResponse({
     status: 200,
-    description: '링크 조회 성공',
-    type: CursorPaginationResponseDto<LinkWithBookmarksResponseDto>,
+    description: '링크 목록 조회 성공',
+    type: LinkCursorPaginationResponseDto, // 구체적인 타입 사용
   })
   findAllByCursor(
     @CurrentUser() user: { sub: number },
@@ -101,6 +108,45 @@ export class LinkController {
     return this.linkService.findByCursorPagination(
       cursorPaginationDto,
       user.sub,
+    );
+  }
+
+  @Get('user/:userId/cursor-pagination')
+  @ApiOperation({
+    summary: '유저 아이디 기반의 커서 페이지네이션으로 링크 조회',
+    description: '커서 기반 페이지네이션을 사용하여 링크를 조회합니다.',
+  })
+  @ApiQuery({
+    name: 'id',
+    required: false,
+    description: '마지막 데이터의 id 값',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: true,
+    enum: ['ASC', 'DESC'],
+    description: '정렬 순서',
+  })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    description: '페이지당 항목 수',
+    example: 10,
+  })
+  @ApiResponse({
+    status: 200,
+    description: '링크 목록 조회 성공',
+    type: LinkCursorPaginationResponseDto, // 구체적인 타입 사용
+  })
+  findAllByCursorUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() cursorPaginationDto: CursorPagePaginationDto,
+    @CurrentUser() currentUser?: { sub: number },
+  ) {
+    return this.linkService.findByUserCursorPagination(
+      cursorPaginationDto,
+      userId,
+      currentUser,
     );
   }
 

@@ -5,12 +5,12 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { Link } from './entity/link.entity';
 import User from 'src/user/entity/user.entity';
 import { CommonModule } from 'src/common/common.module';
-import { LinkUserBookMark } from './entity/link-user-bookmark.entity';
+import { LinkUserBookmark } from './entity/link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Link, User, LinkUserBookMark, Group]),
+    TypeOrmModule.forFeature([Link, User, LinkUserBookmark, Group]),
     CommonModule,
   ],
   providers: [LinkService],

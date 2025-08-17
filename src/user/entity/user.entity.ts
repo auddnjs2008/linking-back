@@ -3,7 +3,7 @@ import { Column, Entity, OneToMany, PrimaryGeneratedColumn } from 'typeorm';
 import { Exclude } from 'class-transformer';
 import { Link } from 'src/link/entity/link.entity';
 import { GroupUserBookmark } from 'src/group/entity/group-user-bookmark.entity';
-import { LinkUserBookMark } from 'src/link/entity/link-user-bookmark.entity';
+import { LinkUserBookmark } from 'src/link/entity/link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
 
 export enum LoginType {
@@ -42,8 +42,8 @@ export default class User extends BaseTable {
   @OneToMany(() => Group, (group) => group.user)
   createdGroups: Group[];
 
-  @OneToMany(() => LinkUserBookMark, (lub) => lub.user)
-  bookmarkedLinks: LinkUserBookMark[];
+  @OneToMany(() => LinkUserBookmark, (lub) => lub.user)
+  bookmarkedLinks: LinkUserBookmark[];
 
   @OneToMany(() => GroupUserBookmark, (lub) => lub.user)
   bookmarkedGroups: GroupUserBookmark[];

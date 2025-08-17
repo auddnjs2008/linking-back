@@ -8,7 +8,7 @@ import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
-import { LinkUserBookMark } from './entity/link-user-bookmark.entity';
+import { LinkUserBookmark } from './entity/link-user-bookmark.entity';
 
 @Injectable()
 export class LinkService {
@@ -17,8 +17,8 @@ export class LinkService {
     private readonly linkRepository: Repository<Link>,
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
-    @InjectRepository(LinkUserBookMark)
-    private readonly linkUserBookMarkRepository: Repository<LinkUserBookMark>,
+    @InjectRepository(LinkUserBookmark)
+    private readonly linkUserBookMarkRepository: Repository<LinkUserBookmark>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -54,7 +54,19 @@ export class LinkService {
   async findByCursorPagination(dto: CursorPagePaginationDto, userId: number) {
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
-    qb.leftJoinAndSelect('link.bookmarkedUsers', 'bookmarkedUsers');
+
+    // 북마크 여부를 서브쿼리로 체크 (성능 향상)
+    qb.addSelect(
+      `EXISTS(
+      SELECT 1 FROM link_user_bookmark lub 
+      WHERE lub."linkId" = link.id 
+      AND lub."userId" = :currentUserId 
+      AND lub."isBookmarked" = true
+    )`,
+      'isBookmarked',
+    );
+    qb.setParameter('currentUserId', userId);
+
     this.commonService.applyCursorPagination(qb, dto);
 
     const curUser = await this.userRepository.findOne({
@@ -72,14 +84,74 @@ export class LinkService {
     // 다음 페이지 존재 여부 확인
     const hasNextPage = links.length > dto.take;
     const data = hasNextPage ? links.slice(0, dto.take) : links;
-    const filteredData = data.map((item) => ({
+    const filteredData = data.map((item: any) => ({
       id: item.id,
       title: item.title,
       description: item.description,
       author: item.user,
-      isBookmarked: item.bookmarkedUsers.some(
-        (bookmark) => bookmark.user.id === curUser.id && bookmark.isBookmarked,
-      ),
+      isBookmarked: item.isBookmarked || false,
+    }));
+
+    return {
+      data: filteredData,
+      meta: {
+        hasNextPage,
+        nextCursor: hasNextPage ? data[data.length - 1].id : null,
+        order: dto.order,
+        take: dto.take,
+        currentCursor: dto.id || null,
+      },
+    };
+  }
+
+  async findByUserCursorPagination(
+    dto: CursorPagePaginationDto,
+    userId: number,
+    currentUser: { sub: number },
+  ) {
+    // 입력값 검증
+    if (!userId || !currentUser?.sub) {
+      throw new BadRequestException('유효하지 않은 사용자 정보입니다.');
+    }
+
+    const qb = this.linkRepository.createQueryBuilder('link');
+
+    // 기본 JOIN
+    qb.leftJoinAndSelect('link.user', 'user');
+
+    // 북마크 여부를 서브쿼리로 체크 (성능 향상)
+    qb.addSelect(
+      `EXISTS(
+        SELECT 1 FROM link_user_bookmark lub 
+        WHERE lub."linkId" = link.id 
+        AND lub."userId" = :currentUserId 
+        AND lub."isBookmarked" = true
+      )`,
+      'isBookmarked',
+    );
+
+    qb.setParameter('currentUserId', currentUser.sub);
+
+    // 커서 페이지네이션 적용
+    this.commonService.applyCursorPagination(qb, dto);
+
+    // 특정 사용자의 링크만 조회
+    qb.where('user.id = :userId', { userId });
+
+    qb.take(dto.take + 1);
+    const links = await qb.getMany();
+
+    // 다음 페이지 존재 여부 확인
+    const hasNextPage = links.length > dto.take;
+    const data = hasNextPage ? links.slice(0, dto.take) : links;
+
+    // 데이터 변환
+    const filteredData = data.map((item: any) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      author: item.user,
+      isBookmarked: item.isBookmarked || false,
     }));
 
     return {

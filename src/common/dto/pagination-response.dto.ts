@@ -18,7 +18,11 @@ export class PaginationResponseDto<T> {
 }
 
 export class CursorPaginationResponseDto<T> {
-  @ApiProperty()
+  @ApiProperty({
+    type: 'array',
+    items: { type: 'object' },
+    description: '페이지네이션된 데이터 배열',
+  })
   data: T[];
 
   @ApiProperty({ example: 'eyJpZCI6MTB9' })
@@ -32,4 +36,14 @@ export class CursorPaginationResponseDto<T> {
 
   @ApiProperty({ example: false })
   hasPrev: boolean;
+}
+
+// 링크용 커서 페이지네이션 응답 (구체적인 타입)
+export class LinkCursorPaginationResponseDto extends CursorPaginationResponseDto<any> {
+  @ApiProperty({
+    type: 'array',
+    items: { $ref: '#/components/schemas/LinkResponseDto' },
+    description: '링크 데이터 배열',
+  })
+  data: any[];
 }

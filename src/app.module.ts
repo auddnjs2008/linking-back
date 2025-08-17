@@ -9,7 +9,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import * as Joi from 'joi';
 import User from './user/entity/user.entity';
 import { Link } from './link/entity/link.entity';
-import { LinkUserBookMark } from './link/entity/link-user-bookmark.entity';
+import { LinkUserBookmark } from './link/entity/link-user-bookmark.entity';
 import { BearerTokenMiddleware } from './auth/middleware/bearer-token.middleware';
 import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
@@ -43,7 +43,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [User, Link, LinkUserBookMark, Group, GroupUserBookmark],
+        entities: [User, Link, LinkUserBookmark, Group, GroupUserBookmark],
         synchronize: true,
       }),
       inject: [ConfigService],
