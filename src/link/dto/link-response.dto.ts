@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserResponseDto } from 'src/user/dto/user-response.dto';
 
 export class LinkResponseDto {
   @ApiProperty({ example: 1 })
@@ -16,8 +17,8 @@ export class LinkResponseDto {
   @ApiProperty({ example: 'NestJS 프레임워크 공식 문서입니다.' })
   description: string;
 
-  @ApiProperty({ example: 1 })
-  creatorId: number;
+  @ApiProperty({ type: UserResponseDto })
+  author: UserResponseDto;
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   createdAt: Date;
@@ -27,9 +28,14 @@ export class LinkResponseDto {
 }
 
 export class LinkWithBookmarksResponseDto extends LinkResponseDto {
-  @ApiProperty({ example: 3 })
-  bookmarkCount: number;
-
   @ApiProperty({ example: true })
   isBookmarked: boolean;
+}
+
+export class LinkDetailResponseDto extends LinkResponseDto {
+  @ApiProperty({ example: true })
+  isBookmarked: boolean;
+
+  @ApiProperty({ example: ['a', 'b'] })
+  tags: string[];
 }

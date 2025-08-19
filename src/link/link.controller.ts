@@ -23,7 +23,10 @@ import { UpdateLinkDto } from './dto/update-link.dto';
 import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { UserId } from 'src/user/decorator/user-id.decorator';
-import { LinkResponseDto } from './dto/link-response.dto';
+import {
+  LinkDetailResponseDto,
+  LinkResponseDto,
+} from './dto/link-response.dto';
 import {
   PaginationResponseDto,
   LinkCursorPaginationResponseDto,
@@ -109,6 +112,22 @@ export class LinkController {
       cursorPaginationDto,
       user.sub,
     );
+  }
+
+  @Get('/:id')
+  @ApiOperation({
+    summary: '링크 상세 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    type: LinkDetailResponseDto,
+  })
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() currentUser: { sub: number },
+  ) {
+    console.log(id, 'linkId');
+    return this.linkService.findOne(id, currentUser.sub);
   }
 
   @Get('user/:userId/cursor-pagination')

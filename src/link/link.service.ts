@@ -57,12 +57,8 @@ export class LinkService {
 
     // 북마크 여부를 서브쿼리로 체크 (성능 향상)
     qb.addSelect(
-      `EXISTS(
-      SELECT 1 FROM link_user_bookmark lub 
-      WHERE lub."linkId" = link.id 
-      AND lub."userId" = :currentUserId 
-      AND lub."isBookmarked" = true
-    )`,
+      `(SELECT lub."isBookmarked" FROM link_user_bookmark lub 
+        WHERE lub."linkId" = link.id AND lub."userId" = :currentUserId)`,
       'isBookmarked',
     );
     qb.setParameter('currentUserId', userId);
@@ -79,11 +75,20 @@ export class LinkService {
 
     // 다음 페이지 확인을 위해 1개 더 가져옴
     qb.take(dto.take + 1);
-    const links = await qb.getMany();
+
+    const rawResults = await qb.getRawAndEntities();
+
+    // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
+    const linksWithBookmark = rawResults.entities.map((link, index) => ({
+      ...link,
+      isBookmarked: rawResults.raw[index].isBookmarked || false,
+    }));
 
     // 다음 페이지 존재 여부 확인
-    const hasNextPage = links.length > dto.take;
-    const data = hasNextPage ? links.slice(0, dto.take) : links;
+    const hasNextPage = linksWithBookmark.length > dto.take;
+    const data = hasNextPage
+      ? linksWithBookmark.slice(0, dto.take)
+      : linksWithBookmark;
     const filteredData = data.map((item: any) => ({
       id: item.id,
       title: item.title,
@@ -124,11 +129,9 @@ export class LinkService {
 
     // 북마크 여부를 서브쿼리로 체크 (성능 향상)
     qb.addSelect(
-      `EXISTS(
-        SELECT 1 FROM link_user_bookmark lub 
-        WHERE lub."linkId" = link.id 
-        AND lub."userId" = :currentUserId 
-        AND lub."isBookmarked" = true
+      `(
+        SELECT lub."isBookmarked" FROM link_user_bookmark lub
+        WHERE lub."linkId" = link.id AND lub."userId" = :currentUserId
       )`,
       'isBookmarked',
     );
@@ -142,13 +145,21 @@ export class LinkService {
     qb.where('user.id = :userId', { userId });
 
     qb.take(dto.take + 1);
-    const links = await qb.getMany();
+    // const links = await qb.getMany();
+
+    const rawResults = await qb.getRawAndEntities();
+
+    const linksWithBookmark = rawResults.entities.map((link, index) => ({
+      ...link,
+      isBookmarked: rawResults.raw[index].isBookmarked || false,
+    }));
 
     // 다음 페이지 존재 여부 확인
-    const hasNextPage = links.length > dto.take;
-    const data = hasNextPage ? links.slice(0, dto.take) : links;
+    const hasNextPage = linksWithBookmark.length > dto.take;
+    const data = hasNextPage
+      ? linksWithBookmark.slice(0, dto.take)
+      : linksWithBookmark;
 
-    console.log(data, 'data');
     // 데이터 변환
     const filteredData = data.map((item: any) => ({
       id: item.id,
@@ -172,11 +183,39 @@ export class LinkService {
     };
   }
 
-  async findOne(id: number) {
-    return this.linkRepository.findOne({
-      where: { id },
-      relations: ['user'],
-    });
+  async findOne(id: number, userId: number) {
+    // return this.linkRepository.findOne({
+    //   where: { id },
+    //   relations: ['user'],
+    // });
+    const qb = this.linkRepository.createQueryBuilder('link');
+    qb.leftJoinAndSelect('link.user', 'user');
+
+    qb.addSelect(
+      `(SELECT lub."isBookmarked" FROM link_user_bookmark lub 
+        WHERE lub."linkId" = :linkId AND lub."userId" = :currentUserId
+      )`,
+      'isBookmarked',
+    );
+
+    qb.setParameter('currentUserId', userId);
+    qb.setParameter('linkId', id);
+    qb.where('link.id = :linkId', { linkId: id });
+
+    // addSelect로 추가한 컬럼을 포함하여 raw 결과와 엔티티를 모두 가져오기
+    const rawResults = await qb.getRawAndEntities();
+
+    if (rawResults.entities.length === 0) {
+      return null;
+    }
+
+    // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
+    const detail_link = {
+      ...rawResults.entities[0],
+      isBookmarked: rawResults.raw[0]?.isBookmarked || false,
+    };
+
+    return detail_link;
   }
 
   async create(createLinkDto: CreateLinkDto, userId: number) {
