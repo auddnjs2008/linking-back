@@ -96,6 +96,7 @@ export class LinkService {
       linkUrl: item.linkUrl,
       thumbnail: item.thumbnail,
       author: item.user,
+      tags: item.tags,
       isBookmarked: item.isBookmarked || false,
     }));
 
@@ -168,6 +169,7 @@ export class LinkService {
       linkUrl: item.linkUrl,
       thumbnail: item.thumbnail,
       author: item.user,
+      tags: item.tags,
       isBookmarked: item.isBookmarked || false,
     }));
 
@@ -266,7 +268,15 @@ export class LinkService {
       throw new BadRequestException('일치하는 링크 아이디가 없습니다.');
     }
 
-    await this.linkRepository.update({ id }, updateLinkDto);
+    const updateThumbnail =
+      link.linkUrl !== updateLinkDto.linkUrl
+        ? await this.extractThumbnail(updateLinkDto.linkUrl)
+        : link.thumbnail;
+
+    await this.linkRepository.update(
+      { id },
+      { ...updateLinkDto, thumbnail: updateThumbnail },
+    );
 
     const newLink = await this.linkRepository.findOne({ where: { id } });
     return newLink;
