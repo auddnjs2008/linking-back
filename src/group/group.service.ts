@@ -58,6 +58,69 @@ export class GroupService {
       isBookmarked: item.bookmarkedUsers.some(
         (bookmark) => bookmark.user.id === curUser.id && bookmark.isBookmarked,
       ),
+      bookmarkCount: item.bookmarkedUsers.length,
+    }));
+
+    return {
+      data: filteredData,
+      meta: {
+        hasNextPage,
+        nextCursor: hasNextPage ? data[data.length - 1].id : null,
+        order: dto.order,
+        take: dto.take,
+        currentCursor: dto.id || null,
+      },
+    };
+  }
+
+  async findByUserCursorPagination(
+    dto: CursorPagePaginationDto,
+    userId: number,
+    currentUser: { sub: number },
+  ) {
+    if (!userId || !currentUser?.sub) {
+      throw new BadRequestException('유효하지 않은 사용자 정보입니다.');
+    }
+
+    const qb = this.groupRepository.createQueryBuilder('group');
+
+    qb.leftJoinAndSelect('group.user', 'user');
+    qb.leftJoinAndSelect('group.linkedLinks', 'linkedLinks');
+
+    qb.addSelect(
+      `
+      (
+        SELECT gub."isBookmarked" FROM group_user_bookmark gub
+        WHERE gub."groupId" = group.id AND gub."userId" = :currentUserId
+      )`,
+      'isBookmarked',
+    );
+    qb.setParameter('currentUserId', currentUser.sub);
+
+    this.commonService.applyCursorPagination(qb, dto);
+
+    qb.where('user.id = :userId', { userId });
+    qb.take(dto.take + 1);
+
+    const rawResults = await qb.getRawAndEntities();
+
+    const groupWithBookmark = rawResults.entities.map((group, index) => ({
+      ...group,
+      isBookmarked: rawResults.raw[index].isBookmarked || false,
+    }));
+
+    const hasNextPage = groupWithBookmark.length > dto.take;
+    const data = hasNextPage
+      ? groupWithBookmark.slice(0, dto.take)
+      : groupWithBookmark;
+
+    const filteredData = data.map((item) => ({
+      id: item.id,
+      title: item.title,
+      description: item.description,
+      author: item.user,
+      createdAt: item.createdAt,
+      linkedLinksCount: item.linkedLinks?.length || 0,
     }));
 
     return {

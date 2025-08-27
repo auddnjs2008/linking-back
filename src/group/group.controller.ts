@@ -20,11 +20,8 @@ import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
-import {
-  GroupResponseDto,
-  GroupWithBookmarksResponseDto,
-} from './dto/group-response.dto';
-import { CursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { GroupResponseDto } from './dto/group-response.dto';
+import { GropuCursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 @ApiTags('그룹')
 @Controller('group')
@@ -60,7 +57,7 @@ export class GroupController {
   @ApiResponse({
     status: 200,
     description: '그룹 조회 성공',
-    type: CursorPaginationResponseDto<GroupWithBookmarksResponseDto>,
+    type: GropuCursorPaginationResponseDto,
   })
   findAllByCursor(
     @CurrentUser() user: { sub: number },
@@ -90,6 +87,33 @@ export class GroupController {
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.groupService.findItem(id);
   }
+
+  @Get('user/:userId/cursor-pagination')
+  @ApiOperation({
+    summary: '유저 아이디 기반의 커서 페이지네이션으로 그룹 조회',
+  })
+  @ApiQuery({
+    name: 'id',
+    required: false,
+    description: '마지막 데이터의 id 값',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: true,
+    enum: ['ASC', 'DESC'],
+    description: '정렬 순서',
+  })
+  @ApiQuery({
+    name: 'take',
+    required: false,
+    description: '페이지당 항목 수',
+    example: 10,
+  })
+  findAllByCursorUser(
+    @Param('userId', ParseIntPipe) userId: number,
+    @Query() cyrsorPaginationDto: CursorPagePaginationDto,
+    @CurrentUser() currentUser?: { sub: number },
+  ) {}
 
   @Post()
   @ApiOperation({

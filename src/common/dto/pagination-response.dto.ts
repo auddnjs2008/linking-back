@@ -47,3 +47,12 @@ export class LinkCursorPaginationResponseDto extends CursorPaginationResponseDto
   })
   data: any[];
 }
+
+export class GropuCursorPaginationResponseDto extends CursorPaginationResponseDto<any> {
+  @ApiProperty({
+    type: 'array',
+    items: { $ref: '#/components/schemas/GroupResponseDto' },
+    description: '그룹 데이터 배열',
+  })
+  data: any[];
+}
