@@ -21,7 +21,7 @@ import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupResponseDto } from './dto/group-response.dto';
-import { GropuCursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { GroupCursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 
 @ApiTags('그룹')
 @Controller('group')
@@ -57,7 +57,7 @@ export class GroupController {
   @ApiResponse({
     status: 200,
     description: '그룹 조회 성공',
-    type: GropuCursorPaginationResponseDto,
+    type: GroupCursorPaginationResponseDto,
   })
   findAllByCursor(
     @CurrentUser() user: { sub: number },
@@ -109,11 +109,22 @@ export class GroupController {
     description: '페이지당 항목 수',
     example: 10,
   })
+  @ApiResponse({
+    status: 200,
+    description: '그룹 조회 성공',
+    type: GroupCursorPaginationResponseDto,
+  })
   findAllByCursorUser(
     @Param('userId', ParseIntPipe) userId: number,
-    @Query() cyrsorPaginationDto: CursorPagePaginationDto,
+    @Query() cursorPaginationDto: CursorPagePaginationDto,
     @CurrentUser() currentUser?: { sub: number },
-  ) {}
+  ) {
+    return this.groupService.findByUserCursorPagination(
+      cursorPaginationDto,
+      userId,
+      currentUser,
+    );
+  }
 
   @Post()
   @ApiOperation({

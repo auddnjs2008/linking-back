@@ -31,6 +31,7 @@ import {
   PaginationResponseDto,
   LinkCursorPaginationResponseDto,
 } from 'src/common/dto/pagination-response.dto';
+import { SearchLinkDto } from './dto/search-link.dto';
 
 @ApiTags('링크')
 @Controller('link')
@@ -112,6 +113,15 @@ export class LinkController {
       cursorPaginationDto,
       user.sub,
     );
+  }
+
+  @Get('/search')
+  searchLink(
+    @CurrentUser() user: { sub: number },
+    @Query() searchLinkDto: SearchLinkDto,
+  ) {
+    const { keyword, ...props } = searchLinkDto;
+    return this.linkService.findByCursorPagination(props, user.sub, keyword);
   }
 
   @Get('/:id')

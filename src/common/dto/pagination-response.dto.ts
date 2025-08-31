@@ -1,4 +1,23 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { GroupResponseDto } from 'src/group/dto/group-response.dto';
+import { LinkResponseDto } from 'src/link/dto/link-response.dto';
+
+export class CursorPaginationMetaDto {
+  @ApiProperty({ example: true })
+  hasNextPage: boolean;
+
+  @ApiProperty({ example: 15, nullable: true })
+  nextCursor?: number;
+
+  @ApiProperty({ example: 'ASC' })
+  order: string;
+
+  @ApiProperty({ example: 10 })
+  take: number;
+
+  @ApiProperty({ example: 5, nullable: true })
+  currentCursor?: number;
+}
 
 export class PaginationResponseDto<T> {
   @ApiProperty()
@@ -25,34 +44,25 @@ export class CursorPaginationResponseDto<T> {
   })
   data: T[];
 
-  @ApiProperty({ example: 'eyJpZCI6MTB9' })
-  nextCursor?: string;
-
-  @ApiProperty({ example: 'eyJpZCI6MX0=' })
-  prevCursor?: string;
-
-  @ApiProperty({ example: true })
-  hasNext: boolean;
-
-  @ApiProperty({ example: false })
-  hasPrev: boolean;
+  @ApiProperty({ type: CursorPaginationMetaDto })
+  meta: CursorPaginationMetaDto;
 }
 
 // 링크용 커서 페이지네이션 응답 (구체적인 타입)
-export class LinkCursorPaginationResponseDto extends CursorPaginationResponseDto<any> {
+export class LinkCursorPaginationResponseDto extends CursorPaginationResponseDto<LinkResponseDto> {
   @ApiProperty({
     type: 'array',
     items: { $ref: '#/components/schemas/LinkResponseDto' },
     description: '링크 데이터 배열',
   })
-  data: any[];
+  data: LinkResponseDto[];
 }
 
-export class GropuCursorPaginationResponseDto extends CursorPaginationResponseDto<any> {
+export class GroupCursorPaginationResponseDto extends CursorPaginationResponseDto<GroupResponseDto> {
   @ApiProperty({
     type: 'array',
     items: { $ref: '#/components/schemas/GroupResponseDto' },
     description: '그룹 데이터 배열',
   })
-  data: any[];
+  data: GroupResponseDto[];
 }

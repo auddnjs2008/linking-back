@@ -1,17 +1,18 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { UserResponseDto } from 'src/user/dto/user-response.dto';
 
 export class GroupResponseDto {
   @ApiProperty({ example: 1 })
   id: number;
 
   @ApiProperty({ example: '프로그래밍 스터디' })
-  name: string;
+  title: string;
 
   @ApiProperty({ example: '프로그래밍을 함께 공부하는 그룹입니다.' })
   description: string;
 
-  @ApiProperty({ example: 1 })
-  creatorId: number;
+  @ApiProperty({ type: UserResponseDto })
+  author: UserResponseDto;
 
   @ApiProperty({ example: '2024-01-01T00:00:00.000Z' })
   createdAt: Date;

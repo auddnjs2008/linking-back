@@ -51,7 +51,11 @@ export class LinkService {
     };
   }
 
-  async findByCursorPagination(dto: CursorPagePaginationDto, userId: number) {
+  async findByCursorPagination(
+    dto: CursorPagePaginationDto,
+    userId: number,
+    keyword?: string,
+  ) {
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
 
@@ -73,9 +77,13 @@ export class LinkService {
       throw new BadRequestException('현재 유저는 존재하지 않습니다.');
     }
 
+    // 키워드가 있으면 타이틀 검색 조건 추가
+    if (keyword) {
+      qb.andWhere('link.title ILIKE :keyword', { keyword: `%${keyword}%` });
+    }
+
     // 다음 페이지 확인을 위해 1개 더 가져옴
     qb.take(dto.take + 1);
-
     const rawResults = await qb.getRawAndEntities();
 
     // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
