@@ -22,6 +22,7 @@ import { CreateGroupDto } from './dto/create-group.dto';
 import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupResponseDto } from './dto/group-response.dto';
 import { GroupCursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
+import { UserId } from 'src/user/decorator/user-id.decorator';
 
 @ApiTags('그룹')
 @Controller('group')
@@ -167,5 +168,28 @@ export class GroupController {
     @Body() updateGroupDto: UpdateGroupDto,
   ) {
     return this.groupService.update(updateGroupDto, id);
+  }
+
+  @Post(':id/bookmark')
+  @ApiOperation({
+    summary: '그룹 북마크 추가',
+    description: '그룹을 북마크에 추가합니다.',
+  })
+  @ApiParam({ name: 'id', description: '그룹 ID', example: 1 })
+  createBookarmk(
+    @Param('id', ParseIntPipe) id: number,
+    @UserId() userId: number,
+  ) {
+    return this.groupService.toggleBookmark(id, userId, true);
+  }
+
+  @Post(':id/unbookmark')
+  @ApiOperation({
+    summary: '그룹 북마크 제거',
+    description: '그룹을 북마크에서 제거합니다.',
+  })
+  @ApiParam({ name: 'id', description: '그룹 ID', example: 1 })
+  unBookmark(@Param('id', ParseIntPipe) id: number, @UserId() userId: number) {
+    return this.groupService.toggleBookmark(id, userId, false);
   }
 }

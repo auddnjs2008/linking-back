@@ -8,6 +8,7 @@ export class GroupUserBookmark {
     name: 'groupId',
     type: 'int8',
   })
+  groupId: number;
   @ManyToOne(() => Group, (group) => group.bookmarkedUsers, {
     onDelete: 'CASCADE',
   })
@@ -17,6 +18,7 @@ export class GroupUserBookmark {
     name: 'userId',
     type: 'int8',
   })
+  userId: number;
   @ManyToOne(() => User, (user) => user.bookmarkedGroups, {
     onDelete: 'CASCADE',
   })

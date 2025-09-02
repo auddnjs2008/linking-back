@@ -9,6 +9,7 @@ import { BadRequestException } from '@nestjs/common';
 import { CreateGroupDto } from './dto/create-group.dto';
 import { Link } from 'src/link/entity/link.entity';
 import { UpdateGroupDto } from './dto/update-group.dto';
+import { GroupUserBookmark } from './entity/group-user-bookmark.entity';
 
 @Injectable()
 export class GroupService {
@@ -19,6 +20,8 @@ export class GroupService {
     private readonly userRepository: Repository<User>,
     @InjectRepository(Link)
     private readonly linkRepository: Repository<Link>,
+    @InjectRepository(GroupUserBookmark)
+    private readonly groupUserBookmarkRepository: Repository<GroupUserBookmark>,
     private readonly commonService: CommonService,
   ) {}
 
@@ -31,9 +34,17 @@ export class GroupService {
     qb.leftJoinAndSelect('group.user', 'user');
     qb.leftJoinAndSelect('group.linkedLinks', 'linkedLinks');
     qb.leftJoinAndSelect('group.bookmarkedUsers', 'bookmarkedUsers');
-    this.commonService.applyCursorPagination(qb, dto);
 
-    qb.take(dto.take + 1);
+    qb.addSelect(
+      `(SELECT gub."isBookmarked" FROM group_user_bookmark gub
+        WHERE gub."groupId" = group.id AND gub."userId" = :currentUserId
+      )`,
+      'isBookmakred',
+    );
+
+    qb.setParameter('currentUserId', userId);
+
+    this.commonService.applyCursorPagination(qb, dto);
 
     const curUser = await this.userRepository.findOne({
       where: { id: userId },
@@ -43,10 +54,19 @@ export class GroupService {
       throw new BadRequestException('사용자를 찾을 수 없습니다.');
     }
 
-    const groups = await qb.getMany();
+    qb.take(dto.take + 1);
+    const rawResults = await qb.getRawAndEntities();
 
-    const hasNextPage = groups.length > dto.take;
-    const data = hasNextPage ? groups.slice(0, dto.take) : groups;
+    //엔티티와 raw 데이터를 매핑하여 isBookmakred 포함
+    const groupsWithBookmark = rawResults.entities.map((group, index) => ({
+      ...group,
+      isBookmarked: rawResults.raw[index].isBookmarked || false,
+    }));
+
+    const hasNextPage = groupsWithBookmark.length > dto.take;
+    const data = hasNextPage
+      ? groupsWithBookmark.slice(0, dto.take)
+      : groupsWithBookmark;
 
     const filteredData = data.map((item) => ({
       id: item.id,
@@ -121,6 +141,7 @@ export class GroupService {
       author: item.user,
       createdAt: item.createdAt,
       linkedLinksCount: item.linkedLinks?.length || 0,
+      isBookmarked: item.isBookmarked,
     }));
 
     return {
@@ -224,5 +245,46 @@ export class GroupService {
     // 그룹 저장
     const updatedGroup = await this.groupRepository.save(group);
     return updatedGroup;
+  }
+
+  async getbookmarkRecord(groupId: number, userId: number) {
+    return this.groupUserBookmarkRepository
+      .createQueryBuilder('gur')
+      .leftJoinAndSelect('gur.group', 'group')
+      .leftJoinAndSelect('gur.user', 'user')
+      .where('group.id = :groupId', { groupId })
+      .andWhere('user.id = :userId', { userId })
+      .getOne();
+  }
+
+  async toggleBookmark(groupId: number, userId: number, isBookmarked: boolean) {
+    const group = await this.groupRepository.findOne({
+      where: { id: groupId },
+    });
+
+    if (!group) {
+      throw new BadRequestException('일치하는 그룹이 없습니다.');
+    }
+
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+
+    if (!user) {
+      throw new BadRequestException('일치하는 유저가 없습니다.');
+    }
+
+    const groupUserRecord = await this.getbookmarkRecord(groupId, userId);
+
+    if (groupUserRecord) {
+      await this.groupUserBookmarkRepository.update(
+        { group, user },
+        { isBookmarked },
+      );
+    } else {
+      await this.groupUserBookmarkRepository.save({
+        group,
+        user,
+        isBookmarked,
+      });
+    }
   }
 }
