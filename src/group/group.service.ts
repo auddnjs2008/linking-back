@@ -39,7 +39,7 @@ export class GroupService {
       `(SELECT gub."isBookmarked" FROM group_user_bookmark gub
         WHERE gub."groupId" = group.id AND gub."userId" = :currentUserId
       )`,
-      'isBookmakred',
+      'isBookmarked',
     );
 
     qb.setParameter('currentUserId', userId);
@@ -75,9 +75,7 @@ export class GroupService {
       linkedLinksCount: item.linkedLinks.length,
       author: item.user,
       createdAt: item.createdAt,
-      isBookmarked: item.bookmarkedUsers.some(
-        (bookmark) => bookmark.user.id === curUser.id && bookmark.isBookmarked,
-      ),
+      isBookmarked: item.isBookmarked,
       bookmarkCount: item.bookmarkedUsers.length,
     }));
 
@@ -156,20 +154,65 @@ export class GroupService {
     };
   }
 
-  async findItem(groupId: number) {
-    const group = await this.groupRepository.findOne({
-      where: { id: groupId },
-      relations: [
-        'bookmarkedUsers',
-        'bookmarkedUsers.user',
-        'linkedLinks',
-        'user',
-      ],
-    });
+  async findItem(groupId: number, currentUserId: number) {
+    const qb = this.groupRepository.createQueryBuilder('group');
+    qb.leftJoinAndSelect('group.user', 'user')
+      .leftJoinAndSelect('group.linkedLinks', 'linkedLinks')
+      .leftJoinAndSelect('linkedLinks.user', 'linkedLinksUser')
+      .leftJoinAndSelect('group.bookmarkedUsers', 'bookmarkedUsers')
+      .leftJoinAndSelect('bookmarkedUsers.user', 'bookmarkedUsersUser')
+      .where('group.id = :groupId', { groupId });
 
-    if (!group) {
+    qb.addSelect(
+      `
+      (
+        SELECT gub."isBookmarked" FROM group_user_bookmark gub
+        WHERE gub."groupId" = group.id AND gub."userId"=:currentUserId
+      )`,
+      'groupIsBookmarked',
+    );
+    qb.setParameter('currentUserId', currentUserId);
+
+    qb.addSelect(
+      `
+      (
+        SELECT lub."isBookmarked" FROM link_user_bookmark lub
+        WHERE lub."linkId" = linkedLinks.id AND lub."userId" = :currentUserId
+      )
+      `,
+      'linkIsBookmarked',
+    );
+
+    const rawResults = await qb.getRawAndEntities();
+
+    if (!rawResults.entities[0]) {
       throw new BadRequestException('해당 그룹을 찾을 수 없습니다.');
     }
+
+    const group = rawResults.entities[0];
+    const rawData = rawResults.raw[0];
+
+    group.isBookmarked = rawData.groupIsBookmarked || false;
+
+    group.linkedLinks = group.linkedLinks.map((link, index) => ({
+      ...link,
+      isBookmarked: rawResults.raw[index]?.linkIsBookmarked || false,
+    }));
+
+    // const group = await this.groupRepository.findOne({
+    //   where: { id: groupId },
+    //   relations: [
+    //     'bookmarkedUsers',
+    //     'bookmarkedUsers.user',
+    //     'linkedLinks',
+    //     'linkedLinks.user',
+    //     'user',
+    //   ],
+    // });
+
+    // if (!group) {
+    //   throw new BadRequestException('해당 그룹을 찾을 수 없습니다.');
+    // }
 
     return group;
   }

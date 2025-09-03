@@ -23,6 +23,7 @@ import { UpdateGroupDto } from './dto/update-group.dto';
 import { GroupResponseDto } from './dto/group-response.dto';
 import { GroupCursorPaginationResponseDto } from 'src/common/dto/pagination-response.dto';
 import { UserId } from 'src/user/decorator/user-id.decorator';
+import { GroupDetailResponseDto } from './dto/group-detail-response.dto';
 
 @ApiTags('그룹')
 @Controller('group')
@@ -79,14 +80,17 @@ export class GroupController {
   @ApiResponse({
     status: 200,
     description: '그룹 조회 성공',
-    type: GroupResponseDto,
+    type: GroupDetailResponseDto,
   })
   @ApiResponse({
     status: 404,
     description: '그룹을 찾을 수 없음',
   })
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.groupService.findItem(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @CurrentUser() user: { sub: number },
+  ) {
+    return this.groupService.findItem(id, user.sub);
   }
 
   @Get('user/:userId/cursor-pagination')

@@ -34,4 +34,7 @@ export class Group extends BaseTable {
 
   @OneToMany(() => GroupUserBookmark, (gub) => gub.group)
   bookmarkedUsers: GroupUserBookmark[];
+
+  // 임시 속성 (데이터베이스 컬럼 아님)
+  isBookmarked?: boolean;
 }
