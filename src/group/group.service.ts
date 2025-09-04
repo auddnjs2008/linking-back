@@ -75,7 +75,10 @@ export class GroupService {
       id: item.id,
       title: item.title,
       description: item.description,
-      linkedLinksCount: item.linkedLinks.length,
+      linkedLinks: item.linkedLinks.map((item) => ({
+        id: item.id,
+        title: item.title,
+      })),
       author: item.user,
       createdAt: item.createdAt,
       isBookmarked: item.isBookmarked,
@@ -144,7 +147,10 @@ export class GroupService {
       description: item.description,
       author: item.user,
       createdAt: item.createdAt,
-      linkedLinksCount: item.linkedLinks?.length || 0,
+      linkedLinks: item.linkedLinks?.map((link) => ({
+        id: link.id,
+        title: link.title,
+      })),
       isBookmarked: item.isBookmarked,
     }));
 
@@ -204,21 +210,6 @@ export class GroupService {
       ...link,
       isBookmarked: rawResults.raw[index]?.linkIsBookmarked || false,
     }));
-
-    // const group = await this.groupRepository.findOne({
-    //   where: { id: groupId },
-    //   relations: [
-    //     'bookmarkedUsers',
-    //     'bookmarkedUsers.user',
-    //     'linkedLinks',
-    //     'linkedLinks.user',
-    //     'user',
-    //   ],
-    // });
-
-    // if (!group) {
-    //   throw new BadRequestException('해당 그룹을 찾을 수 없습니다.');
-    // }
 
     return group;
   }
@@ -294,6 +285,17 @@ export class GroupService {
     // 그룹 저장
     const updatedGroup = await this.groupRepository.save(group);
     return updatedGroup;
+  }
+
+  async delete(id: number) {
+    const group = await this.groupRepository.findOne({ where: { id } });
+
+    if (!group) {
+      throw new BadRequestException('일치하는 그룹이 없습니다.');
+    }
+
+    await this.groupRepository.delete(id);
+    return id;
   }
 
   async getbookmarkRecord(groupId: number, userId: number) {

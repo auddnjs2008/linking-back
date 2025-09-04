@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   ParseIntPipe,
@@ -172,6 +173,16 @@ export class GroupController {
     @Body() updateGroupDto: UpdateGroupDto,
   ) {
     return this.groupService.update(updateGroupDto, id);
+  }
+
+  @Delete(':id')
+  @ApiOperation({
+    summary: '그룹 삭제',
+    description: '기존 그룹을 삭제합니다.',
+  })
+  @ApiParam({ name: 'id', description: '그룹 ID', example: 1 })
+  delete(@Param('id', ParseIntPipe) id: number) {
+    return this.groupService.delete(id);
   }
 
   @Post(':id/bookmark')
