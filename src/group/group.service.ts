@@ -57,11 +57,14 @@ export class GroupService {
     qb.take(dto.take + 1);
     const rawResults = await qb.getRawAndEntities();
 
-    //엔티티와 raw 데이터를 매핑하여 isBookmakred 포함
-    const groupsWithBookmark = rawResults.entities.map((group, index) => ({
-      ...group,
-      isBookmarked: rawResults.raw[index].isBookmarked || false,
-    }));
+    //엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
+    const groupsWithBookmark = rawResults.entities.map((group) => {
+      const rawData = rawResults.raw.find((raw) => raw.group_id === group.id);
+      return {
+        ...group,
+        isBookmarked: rawData?.isBookmarked || false,
+      };
+    });
 
     const hasNextPage = groupsWithBookmark.length > dto.take;
     const data = hasNextPage
@@ -122,10 +125,13 @@ export class GroupService {
 
     const rawResults = await qb.getRawAndEntities();
 
-    const groupWithBookmark = rawResults.entities.map((group, index) => ({
-      ...group,
-      isBookmarked: rawResults.raw[index].isBookmarked || false,
-    }));
+    const groupWithBookmark = rawResults.entities.map((group) => {
+      const rawData = rawResults.raw.find((raw) => raw.group_id === group.id);
+      return {
+        ...group,
+        isBookmarked: rawData?.isBookmarked || false,
+      };
+    });
 
     const hasNextPage = groupWithBookmark.length > dto.take;
     const data = hasNextPage
