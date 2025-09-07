@@ -44,6 +44,12 @@ export class GroupService {
 
     qb.setParameter('currentUserId', userId);
 
+    if (dto.keyword?.trim()) {
+      qb.where('group.title ILIKE :keyword', {
+        keyword: `%${dto.keyword.trim()}%`,
+      });
+    }
+
     this.commonService.applyCursorPagination(qb, dto);
 
     const curUser = await this.userRepository.findOne({
@@ -120,6 +126,12 @@ export class GroupService {
       'isBookmarked',
     );
     qb.setParameter('currentUserId', currentUser.sub);
+
+    if (dto.keyword?.trim()) {
+      qb.where('group.title ILIKE :keyword', {
+        keyword: `%${dto.keyword.trim()}%`,
+      });
+    }
 
     this.commonService.applyCursorPagination(qb, dto);
 

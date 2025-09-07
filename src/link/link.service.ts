@@ -87,10 +87,13 @@ export class LinkService {
     const rawResults = await qb.getRawAndEntities();
 
     // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
-    const linksWithBookmark = rawResults.entities.map((link, index) => ({
-      ...link,
-      isBookmarked: rawResults.raw[index].isBookmarked || false,
-    }));
+    const linksWithBookmark = rawResults.entities.map((link) => {
+      const rawData = rawResults.raw.find((raw) => raw.link_id === link.id);
+      return {
+        ...link,
+        isBookmarked: rawData?.isBookmarked || false,
+      };
+    });
 
     // 다음 페이지 존재 여부 확인
     const hasNextPage = linksWithBookmark.length > dto.take;
@@ -125,7 +128,6 @@ export class LinkService {
     userId: number,
     currentUser: { sub: number },
   ) {
-    console.log(dto, userId, currentUser);
     // 입력값 검증
     if (!userId || !currentUser?.sub) {
       throw new BadRequestException('유효하지 않은 사용자 정보입니다.');
@@ -153,15 +155,25 @@ export class LinkService {
     // 특정 사용자의 링크만 조회
     qb.where('user.id = :userId', { userId });
 
+    // 키워드가 있을 때만 검색
+    if (dto.keyword?.trim()) {
+      qb.andWhere('link.title ILIKE :keyword', {
+        keyword: `%${dto.keyword.trim()}%`,
+      });
+    }
+
     qb.take(dto.take + 1);
     // const links = await qb.getMany();
 
     const rawResults = await qb.getRawAndEntities();
 
-    const linksWithBookmark = rawResults.entities.map((link, index) => ({
-      ...link,
-      isBookmarked: rawResults.raw[index].isBookmarked || false,
-    }));
+    const linksWithBookmark = rawResults.entities.map((link) => {
+      const rawData = rawResults.raw.find((raw) => raw.link_id === link.id);
+      return {
+        ...link,
+        isBookmarked: rawData?.isBookmarked || false,
+      };
+    });
 
     // 다음 페이지 존재 여부 확인
     const hasNextPage = linksWithBookmark.length > dto.take;

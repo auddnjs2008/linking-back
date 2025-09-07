@@ -1,4 +1,4 @@
-import { IsIn, IsInt, IsOptional } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
 
 export class CursorPagePaginationDto {
   @IsInt()
@@ -12,4 +12,8 @@ export class CursorPagePaginationDto {
   @IsInt()
   @IsOptional()
   take: number = 10;
+
+  @IsString()
+  @IsOptional()
+  keyword?: string;
 }
