@@ -68,6 +68,7 @@ export class LinkService {
     qb.setParameter('currentUserId', userId);
 
     this.commonService.applyCursorPagination(qb, dto);
+    this.commonService.applyLinkFilters(qb, dto, userId);
 
     const curUser = await this.userRepository.findOne({
       where: { id: userId },
@@ -151,6 +152,7 @@ export class LinkService {
 
     // 커서 페이지네이션 적용
     this.commonService.applyCursorPagination(qb, dto);
+    this.commonService.applyLinkFilters(qb, dto, currentUser.sub);
 
     // 특정 사용자의 링크만 조회
     qb.where('user.id = :userId', { userId });

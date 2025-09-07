@@ -1,4 +1,11 @@
-import { IsIn, IsInt, IsOptional, IsString } from 'class-validator';
+import {
+  IsBoolean,
+  IsDateString,
+  IsIn,
+  IsInt,
+  IsOptional,
+  IsString,
+} from 'class-validator';
 
 export class CursorPagePaginationDto {
   @IsInt()
@@ -16,4 +23,20 @@ export class CursorPagePaginationDto {
   @IsString()
   @IsOptional()
   keyword?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string; // YYYY-MM-DD 형식
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
+
+  @IsOptional()
+  @IsBoolean()
+  isBookmarked?: boolean;
+
+  @IsOptional()
+  @IsBoolean()
+  hasThumbnail?: boolean;
 }

@@ -29,4 +29,48 @@ export class CommonService {
     qb.orderBy(`${qb.alias}.id`, order);
     qb.take(take);
   }
+
+  applyLinkFilters<T>(
+    qb: SelectQueryBuilder<T>,
+    dto: CursorPagePaginationDto,
+    currentUserId?: number,
+  ) {
+    if (dto.keyword?.trim()) {
+      qb.andWhere('link.title ILIKE :keyword', {
+        keyword: `%${dto.keyword.trim()}%`,
+      });
+    }
+
+    if (dto.startDate) {
+      qb.andWhere('link.createdAt >= :startDate', {
+        startDate: new Date(dto.startDate),
+      });
+    }
+
+    if (dto.endDate) {
+      qb.andWhere('link.createdAt <= :endDate', {
+        endDate: new Date(dto.endDate),
+      });
+    }
+
+    if (dto.isBookmarked !== undefined && currentUserId) {
+      if (dto.isBookmarked) {
+        qb.andWhere(
+          'EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub.linkId = link.id AND lub.userId = :currentUserId AND lub.isBookmarked = true)',
+        );
+      } else {
+        qb.andWhere(
+          'NOT EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub.linkId = link.id AND lub.userId = :currentUserId AND lub.isBookmarked = true)',
+        );
+      }
+    }
+
+    if (dto.hasThumbnail !== undefined) {
+      if (dto.hasThumbnail) {
+        qb.andWhere("link.thumbnail IS NOT NULL AND link.thumbnail != ''");
+      } else {
+        qb.andWhere("link.thumbnail IS NULL OR link.thumbnail = ''");
+      }
+    }
+  }
 }
