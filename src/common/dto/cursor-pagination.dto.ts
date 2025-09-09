@@ -6,10 +6,12 @@ import {
   IsOptional,
   IsString,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class CursorPagePaginationDto {
   @IsInt()
   @IsOptional()
+  @Transform(({ value }) => +value)
   id?: number;
 
   @IsIn(['ASC', 'DESC'])
@@ -18,6 +20,7 @@ export class CursorPagePaginationDto {
 
   @IsInt()
   @IsOptional()
+  @Transform(({ value }) => +value)
   take: number = 10;
 
   @IsString()
@@ -34,9 +37,19 @@ export class CursorPagePaginationDto {
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   isBookmarked?: boolean;
 
   @IsOptional()
   @IsBoolean()
+  @Transform(({ value }) => {
+    if (value === 'true') return true;
+    if (value === 'false') return false;
+    return value;
+  })
   hasThumbnail?: boolean;
 }

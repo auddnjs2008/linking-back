@@ -120,8 +120,7 @@ export class LinkController {
     @CurrentUser() user: { sub: number },
     @Query() searchLinkDto: SearchLinkDto,
   ) {
-    const { keyword, ...props } = searchLinkDto;
-    return this.linkService.findByCursorPagination(props, user.sub, keyword);
+    return this.linkService.findByCursorPagination(searchLinkDto, user.sub);
   }
 
   @Get('/:id')

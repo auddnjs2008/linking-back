@@ -18,7 +18,7 @@ export class CommonService {
     qb: SelectQueryBuilder<T>,
     dto: CursorPagePaginationDto,
   ) {
-    const { id, order, take } = dto;
+    const { id, order } = dto;
 
     if (id) {
       const direction = order === 'ASC' ? '>' : '<';
@@ -27,7 +27,7 @@ export class CommonService {
     }
 
     qb.orderBy(`${qb.alias}.id`, order);
-    qb.take(take);
+    // qb.take(take);
   }
 
   applyLinkFilters<T>(
@@ -55,14 +55,16 @@ export class CommonService {
 
     if (dto.isBookmarked !== undefined && currentUserId) {
       if (dto.isBookmarked) {
+        console.log('bookmark ture', dto.isBookmarked);
         qb.andWhere(
-          'EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub.linkId = link.id AND lub.userId = :currentUserId AND lub.isBookmarked = true)',
+          'EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub."linkId" = link.id AND lub."userId" = :currentUserId AND lub."isBookmarked" = true)',
         );
       } else {
         qb.andWhere(
-          'NOT EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub.linkId = link.id AND lub.userId = :currentUserId AND lub.isBookmarked = true)',
+          'NOT EXISTS (SELECT 1 FROM link_user_bookmark lub WHERE lub."linkId" = link.id AND lub."userId" = :currentUserId AND lub."isBookmarked" = true)',
         );
       }
+      qb.setParameter('currentUserId', currentUserId);
     }
 
     if (dto.hasThumbnail !== undefined) {

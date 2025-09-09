@@ -51,11 +51,7 @@ export class LinkService {
     };
   }
 
-  async findByCursorPagination(
-    dto: CursorPagePaginationDto,
-    userId: number,
-    keyword?: string,
-  ) {
+  async findByCursorPagination(dto: CursorPagePaginationDto, userId: number) {
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
 
@@ -68,6 +64,7 @@ export class LinkService {
     qb.setParameter('currentUserId', userId);
 
     this.commonService.applyCursorPagination(qb, dto);
+
     this.commonService.applyLinkFilters(qb, dto, userId);
 
     const curUser = await this.userRepository.findOne({
@@ -76,11 +73,6 @@ export class LinkService {
 
     if (!curUser) {
       throw new BadRequestException('현재 유저는 존재하지 않습니다.');
-    }
-
-    // 키워드가 있으면 타이틀 검색 조건 추가
-    if (keyword) {
-      qb.andWhere('link.title ILIKE :keyword', { keyword: `%${keyword}%` });
     }
 
     // 다음 페이지 확인을 위해 1개 더 가져옴
@@ -156,13 +148,6 @@ export class LinkService {
 
     // 특정 사용자의 링크만 조회
     qb.where('user.id = :userId', { userId });
-
-    // 키워드가 있을 때만 검색
-    if (dto.keyword?.trim()) {
-      qb.andWhere('link.title ILIKE :keyword', {
-        keyword: `%${dto.keyword.trim()}%`,
-      });
-    }
 
     qb.take(dto.take + 1);
     // const links = await qb.getMany();
