@@ -147,7 +147,7 @@ export class LinkService {
     this.commonService.applyLinkFilters(qb, dto, currentUser.sub);
 
     // 특정 사용자의 링크만 조회
-    qb.where('user.id = :userId', { userId });
+    qb.andWhere('user.id = :userId', { userId });
 
     qb.take(dto.take + 1);
     // const links = await qb.getMany();
