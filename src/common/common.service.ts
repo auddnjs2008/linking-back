@@ -75,4 +75,41 @@ export class CommonService {
       }
     }
   }
+
+  applyGroupFilters<T>(
+    qb: SelectQueryBuilder<T>,
+    dto: CursorPagePaginationDto,
+    currentUserId: number,
+  ) {
+    if (dto.keyword?.trim()) {
+      qb.andWhere('group.title ILIKE :keyword', {
+        keyword: `%${dto.keyword.trim()}%`,
+      });
+    }
+
+    if (dto.startDate) {
+      qb.andWhere('group.createdAt >= :startDate', {
+        startDate: new Date(dto.startDate),
+      });
+    }
+
+    if (dto.endDate) {
+      qb.andWhere('group.createdAt >= :endDate', {
+        endDate: new Date(dto.endDate),
+      });
+    }
+
+    if (dto.isBookmarked !== undefined && currentUserId) {
+      if (dto.isBookmarked) {
+        qb.andWhere(
+          `EXISTS (SELECT 1 FROM group_user_bookmark gub WHERE gub."groupId" = group.id AND gub."userId" = :currentUserId AND gub."isBookmarked" = true)`,
+        );
+      } else {
+        qb.andWhere(
+          `NOT EXISTS (SELECT 1 FROM group_user_bookmark gub WHERE gub."groupId" = group.id AND gub."userId" = :currentUserId AND gub."isBookmarked" = true)`,
+        );
+      }
+      qb.setParameter('currentUserId', currentUserId);
+    }
+  }
 }

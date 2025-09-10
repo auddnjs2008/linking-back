@@ -44,13 +44,8 @@ export class GroupService {
 
     qb.setParameter('currentUserId', userId);
 
-    if (dto.keyword?.trim()) {
-      qb.where('group.title ILIKE :keyword', {
-        keyword: `%${dto.keyword.trim()}%`,
-      });
-    }
-
     this.commonService.applyCursorPagination(qb, dto);
+    this.commonService.applyGroupFilters(qb, dto, userId);
 
     const curUser = await this.userRepository.findOne({
       where: { id: userId },
@@ -127,15 +122,10 @@ export class GroupService {
     );
     qb.setParameter('currentUserId', currentUser.sub);
 
-    if (dto.keyword?.trim()) {
-      qb.where('group.title ILIKE :keyword', {
-        keyword: `%${dto.keyword.trim()}%`,
-      });
-    }
-
     this.commonService.applyCursorPagination(qb, dto);
+    this.commonService.applyGroupFilters(qb, dto, currentUser.sub);
 
-    qb.where('user.id = :userId', { userId });
+    qb.andWhere('user.id = :userId', { userId });
     qb.take(dto.take + 1);
 
     const rawResults = await qb.getRawAndEntities();
