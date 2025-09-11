@@ -94,7 +94,7 @@ export class CommonService {
     }
 
     if (dto.endDate) {
-      qb.andWhere('group.createdAt >= :endDate', {
+      qb.andWhere('group.createdAt <= :endDate', {
         endDate: new Date(dto.endDate),
       });
     }
