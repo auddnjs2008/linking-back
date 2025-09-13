@@ -9,6 +9,7 @@ import {
   PrimaryGeneratedColumn,
 } from 'typeorm';
 import { LinkUserBookmark } from './link-user-bookmark.entity';
+import { LinkComment } from 'src/linkComment/entity/linkComment.entity';
 import { Group } from 'src/group/entity/group.entity';
 
 @Entity()
@@ -41,4 +42,7 @@ export class Link extends BaseTable {
 
   @ManyToMany(() => Group, (group) => group.linkedLinks)
   linkedGroups: Group[];
+
+  @OneToMany(() => LinkComment, (comment) => comment.link)
+  comments: LinkComment[];
 }

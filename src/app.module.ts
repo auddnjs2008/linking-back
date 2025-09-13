@@ -16,7 +16,9 @@ import { AuthModule } from './auth/auth.module';
 import { LinkModule } from './link/link.module';
 import { Group } from './group/entity/group.entity';
 import { GroupModule } from './group/group.module';
+import { LinkCommentModule } from './linkComment/linkComment.module';
 import { GroupUserBookmark } from './group/entity/group-user-bookmark.entity';
+import { LinkComment } from './linkComment/entity/linkComment.entity';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/Auth.guard';
 
@@ -43,7 +45,14 @@ import { AuthGuard } from './auth/guard/Auth.guard';
         username: configService.get<string>('DB_USERNAME'),
         password: configService.get<string>('DB_PASSWORD'),
         database: configService.get<string>('DB_DATABASE'),
-        entities: [User, Link, LinkUserBookmark, Group, GroupUserBookmark],
+        entities: [
+          User,
+          Link,
+          LinkUserBookmark,
+          Group,
+          GroupUserBookmark,
+          LinkComment,
+        ],
         synchronize: true,
       }),
       inject: [ConfigService],
@@ -52,6 +61,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
     AuthModule,
     LinkModule,
     GroupModule,
+    LinkCommentModule,
   ],
   controllers: [],
   providers: [

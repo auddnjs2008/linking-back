@@ -5,6 +5,7 @@ import { Link } from 'src/link/entity/link.entity';
 import { GroupUserBookmark } from 'src/group/entity/group-user-bookmark.entity';
 import { LinkUserBookmark } from 'src/link/entity/link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
+import { LinkComment } from 'src/linkComment/entity/linkComment.entity';
 
 export enum LoginType {
   LOCAL = 'local',
@@ -47,4 +48,7 @@ export default class User extends BaseTable {
 
   @OneToMany(() => GroupUserBookmark, (lub) => lub.user)
   bookmarkedGroups: GroupUserBookmark[];
+
+  @OneToMany(() => LinkComment, (linkComment) => linkComment.user)
+  comments: LinkComment[];
 }
