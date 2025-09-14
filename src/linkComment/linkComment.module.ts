@@ -3,10 +3,11 @@ import { LinkCommentController } from './linkComment.controller';
 import { LinkCommentService } from './linkComment.service';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { LinkComment } from './entity/linkComment.entity';
-import User from 'src/user/entity/user.entity';
+import { LinkModule } from 'src/link/link.module';
+import { UserModule } from 'src/user/user.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([LinkComment, User])],
+  imports: [TypeOrmModule.forFeature([LinkComment]), LinkModule, UserModule],
   providers: [LinkCommentService],
   controllers: [LinkCommentController],
 })

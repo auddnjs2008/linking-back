@@ -15,5 +15,6 @@ import { Group } from 'src/group/entity/group.entity';
   ],
   providers: [LinkService],
   controllers: [LinkController],
+  exports: [LinkService],
 })
 export class LinkModule {}
