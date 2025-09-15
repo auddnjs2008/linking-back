@@ -22,8 +22,8 @@ export class LinkCommentService {
 
   async findCommentsByLinkId(linkId: number) {
     return this.linkCommentRepository.find({
-      where: { link: { id: linkId } },
-      relations: ['user', 'link'],
+      where: { link: { id: linkId }, parentComment: null },
+      relations: ['user', 'replies', 'replies.user'],
       order: { createdAt: 'ASC' }, // 댓글을 시간순으로 정렬
     });
   }
@@ -42,11 +42,32 @@ export class LinkCommentService {
     // 사용자 존재 여부 확인
     await this.userService.findOne(userId);
 
+    // 재댓글인 경우 부모 댓글 검증
+
+    if (dto.parentCommentId) {
+      const parentComment = await this.linkCommentRepository.findOne({
+        where: {
+          id: dto.parentCommentId,
+          link: { id: linkId },
+        },
+        relations: ['parentComment'],
+      });
+
+      if (!parentComment) {
+        throw new NotFoundException('부모 댓글을 찾을 수 없습니다.');
+      }
+
+      if (parentComment.parentComment) {
+        throw new BadRequestException('재댓글에든ㄴ 답글을 달 수 없습니다.');
+      }
+    }
+
     // 댓글 생성
     const comment = this.linkCommentRepository.create({
       comment: dto.comment,
       link: { id: linkId },
       user: { id: userId },
+      parentComment: dto.parentCommentId ? { id: dto.parentCommentId } : null,
     });
 
     return this.linkCommentRepository.save(comment);
@@ -57,12 +78,17 @@ export class LinkCommentService {
     userId: number,
     dto: UpdateLinkCommentDto,
   ) {
-    const linkComment = this.linkCommentRepository.findOne({
+    const linkComment = await this.linkCommentRepository.findOne({
       where: { id: commentId },
+      relations: ['user', 'replies'],
     });
 
     if (!linkComment) {
       throw new NotFoundException('링크 코멘트를 찾을 수 없습니다.');
+    }
+
+    if (linkComment.user.id !== userId) {
+      throw new BadRequestException('댓글을 수정할 권한이 없습니다.');
     }
 
     await this.linkCommentRepository.update(
@@ -72,6 +98,7 @@ export class LinkCommentService {
 
     const newLinkComment = await this.linkCommentRepository.findOne({
       where: { id: commentId },
+      relations: ['user', 'replies', 'replies.user'],
     });
     return newLinkComment;
   }
@@ -79,6 +106,7 @@ export class LinkCommentService {
   async deleteComment(id: number) {
     const linkComment = await this.linkCommentRepository.findOne({
       where: { id },
+      relations: ['user', 'replies'],
     });
 
     if (!linkComment) {
