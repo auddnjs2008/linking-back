@@ -4,6 +4,7 @@ import { Link } from 'src/link/entity/link.entity';
 import {
   Column,
   Entity,
+  JoinColumn,
   ManyToOne,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -25,7 +26,9 @@ export class LinkComment extends BaseTable {
 
   @ManyToOne(() => LinkComment, (comment) => comment.replies, {
     nullable: true,
+    onDelete: 'CASCADE',
   })
+  @JoinColumn({ name: 'parentCommentId' })
   parentComment?: LinkComment;
 
   @OneToMany(() => LinkComment, (comment) => comment.parentComment)

@@ -21,11 +21,18 @@ export class LinkCommentService {
   ) {}
 
   async findCommentsByLinkId(linkId: number) {
-    return this.linkCommentRepository.find({
-      where: { link: { id: linkId }, parentComment: null },
-      relations: ['user', 'replies', 'replies.user'],
-      order: { createdAt: 'ASC' }, // 댓글을 시간순으로 정렬
-    });
+    const comments = await this.linkCommentRepository
+      .createQueryBuilder('comment')
+      .leftJoinAndSelect('comment.user', 'user')
+      .leftJoinAndSelect('comment.replies', 'replies')
+      .leftJoinAndSelect('replies.user', 'replyUser')
+      .where('comment.linkId = :linkId', { linkId })
+      .andWhere('comment.parentCommentId IS NULL')
+      .orderBy('comment.createdAt', 'ASC')
+      .addOrderBy('replies.createdAt', 'ASC')
+      .getMany();
+
+    return comments;
   }
 
   async createComment(
@@ -70,7 +77,18 @@ export class LinkCommentService {
       parentComment: dto.parentCommentId ? { id: dto.parentCommentId } : null,
     });
 
-    return this.linkCommentRepository.save(comment);
+    const newComment = await this.linkCommentRepository.save(comment);
+
+    return {
+      id: newComment.id,
+      comment: newComment.comment,
+      createdAt: newComment.createdAt,
+      updatedAt: newComment.updatedAt,
+      user: newComment.user,
+      replies: newComment.replies,
+      parentComment: newComment.parentComment,
+      parentCommentId: newComment.parentCommentId,
+    };
   }
 
   async updateComment(
