@@ -4,6 +4,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  Patch,
   Post,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
@@ -11,6 +12,7 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { CurrentUser } from 'src/auth/decorator/authorization.decorator';
+import { UpdateUserDto } from './dto/update-user.dto';
 
 @ApiTags('사용자')
 @Controller('user')
@@ -41,8 +43,6 @@ export class UserController {
     type: UserResponseDto,
   })
   findMe(@CurrentUser() user: { sub: number }) {
-    console.log(user, 'user');
-
     return this.userService.findOne(user.sub);
   }
 
@@ -65,6 +65,11 @@ export class UserController {
     return this.userService.findOne(id);
   }
 
+  @Get(':id/stats')
+  findUserStats(@Param('id', ParseIntPipe) id: number) {
+    return this.userService.findUserStats(id);
+  }
+
   @Post()
   @ApiOperation({
     summary: '사용자 생성',
@@ -85,5 +90,13 @@ export class UserController {
   })
   create(@Body() createUserDto: CreateUserDto): Promise<UserResponseDto> {
     return this.userService.create(createUserDto);
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<UpdateUserDto> {
+    return this.userService.update(updateUserDto, id);
   }
 }

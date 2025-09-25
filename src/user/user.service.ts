@@ -6,6 +6,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcrypt';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { Link } from 'src/link/entity/link.entity';
+import { Group } from 'src/group/entity/group.entity';
+import { CommonService } from 'src/common/common.service';
 
 @Injectable()
 export class UserService {
@@ -13,6 +16,13 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly configService: ConfigService,
+    private readonly commonService: CommonService,
+
+    @InjectRepository(Link)
+    private readonly linkRepository: Repository<Link>,
+
+    @InjectRepository(Group)
+    private readonly groupRepository: Repository<Group>,
   ) {}
 
   async create(createUserDto: CreateUserDto) {
@@ -51,6 +61,7 @@ export class UserService {
       throw new BadRequestException('존재하지 않는 유저입니다.');
     }
 
+    //----- 패스워드 변경 -------------------------
     const newPassword = updateUserDto.password
       ? await bcrypt.hash(
           updateUserDto.password,
@@ -58,9 +69,23 @@ export class UserService {
         )
       : user.password;
 
+    //--------이름 변경 --------------------------------
+    const newName = updateUserDto.name ?? user.name;
+
+    //--------프로필 사진 변경 --------------------------
+
+    let newProfile = null;
+    if (updateUserDto.tempFileName) {
+      await this.commonService.saveMovieToPermanentStorage(
+        updateUserDto.tempFileName,
+      );
+      newProfile = `https://${this.configService.get<string>('BUCKET_NAME')}.s3.region.amazonaws.com/profile/${updateUserDto.tempFileName}`;
+    }
+
+    //-----------------------------------------------
     await this.userRepository.update(
       { id: userId },
-      { ...updateUserDto, password: newPassword },
+      { name: newName, profile: newProfile, password: newPassword },
     );
 
     // 업데이트된 사용자 정보 반환
@@ -82,5 +107,36 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async findUserStats(userId: number) {
+    const linkCount = await this.linkRepository.count({
+      where: { user: { id: userId } },
+    });
+
+    const groupCount = await this.groupRepository.count({
+      where: { user: { id: userId } },
+    });
+
+    const linkBookmarkCount = await this.linkRepository
+      .createQueryBuilder('link')
+      .leftJoin('link.bookmarkedUsers', 'bookmarkUser')
+      .where('link.user.id = :userId', { userId })
+      .select('COUNT(bookmarkUser.id)', 'bookmarkCount')
+      .getRawOne();
+
+    const groupBookmarkCount = await this.groupRepository
+      .createQueryBuilder('group')
+      .leftJoin('group.bookmarkedUsers', 'bookmarkUser')
+      .where('group.user.id = :userId', { userId })
+      .select('COUNT(bookmarkUser.id)', 'bookmarkCount')
+      .getRawOne();
+
+    return {
+      createdLinkCount: linkCount,
+      createdGroupCount: groupCount,
+      receivedLinkBookmark: linkBookmarkCount.bookmarkCount,
+      receivedGroupBookmark: groupBookmarkCount.bookmarkCount,
+    };
   }
 }

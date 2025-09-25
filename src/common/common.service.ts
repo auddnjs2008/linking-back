@@ -1,11 +1,63 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { SelectQueryBuilder } from 'typeorm';
 import PagePaginationDto from './dto/page-pagination.dto';
 import { CursorPagePaginationDto } from './dto/cursor-pagination.dto';
+import { ObjectCannedACL, PutObjectCommand, S3 } from '@aws-sdk/client-s3';
+import { ConfigService } from '@nestjs/config';
+import { v4 as Uuid } from 'uuid';
+import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class CommonService {
-  constructor() {}
+  private s3: S3;
+
+  constructor(private readonly configService: ConfigService) {
+    this.s3 = new S3({
+      credentials: {
+        accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
+        secretAccessKey: configService.get<string>('AWS_SECRET_ACCESS_KEY'),
+      },
+      region: configService.get<string>('AWS_REGION'),
+    });
+  }
+
+  async saveMovieToPermanentStorage(fileName: string) {
+    try {
+      const bucketName = this.configService.get<string>('BUCKET_NAME');
+      await this.s3.copyObject({
+        Bucket: bucketName,
+        CopySource: `${bucketName}/temp/${fileName}`,
+        Key: `/profile/${fileName}`,
+        ACL: 'public-read',
+      });
+
+      await this.s3.deleteObject({
+        Bucket: bucketName,
+        Key: `temp/${fileName}`,
+      });
+    } catch (e) {
+      console.log(e);
+      throw new InternalServerErrorException('s3 에러!');
+    }
+  }
+
+  async createPresignedUrl(expiresIn = 300, fileType: string) {
+    const params = {
+      Bucket: this.configService.get<string>('BUCKET_NAME'),
+      Key: `/temp/${Uuid()}.${fileType}`,
+      ACL: ObjectCannedACL.public_read,
+    };
+
+    try {
+      const url = await getSignedUrl(this.s3, new PutObjectCommand(params), {
+        expiresIn,
+      });
+      return url;
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('S3 Presigned Url 생성 실패');
+    }
+  }
 
   applyPagePagination<T>(qb: SelectQueryBuilder<T>, dto: PagePaginationDto) {
     const { page, take } = dto;
