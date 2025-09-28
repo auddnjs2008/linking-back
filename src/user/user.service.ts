@@ -122,21 +122,21 @@ export class UserService {
       .createQueryBuilder('link')
       .leftJoin('link.bookmarkedUsers', 'bookmarkUser')
       .where('link.user.id = :userId', { userId })
-      .select('COUNT(bookmarkUser.id)', 'bookmarkCount')
+      .select('COUNT(bookmarkUser.linkId)', 'bookmarkCount')
       .getRawOne();
 
     const groupBookmarkCount = await this.groupRepository
       .createQueryBuilder('group')
       .leftJoin('group.bookmarkedUsers', 'bookmarkUser')
       .where('group.user.id = :userId', { userId })
-      .select('COUNT(bookmarkUser.id)', 'bookmarkCount')
+      .select('COUNT(bookmarkUser.groupId)', 'bookmarkCount')
       .getRawOne();
 
     return {
       createdLinkCount: linkCount,
       createdGroupCount: groupCount,
-      receivedLinkBookmark: linkBookmarkCount.bookmarkCount,
-      receivedGroupBookmark: groupBookmarkCount.bookmarkCount,
+      receivedLinkBookmark: parseInt(linkBookmarkCount.bookmarkCount),
+      receivedGroupBookmark: parseInt(groupBookmarkCount.bookmarkCount),
     };
   }
 }

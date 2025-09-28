@@ -5,9 +5,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import User from './entity/user.entity';
 import { Link } from 'src/link/entity/link.entity';
 import { Group } from 'src/group/entity/group.entity';
+import { CommonModule } from 'src/common/common.module';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([User, Link, Group])],
+  imports: [TypeOrmModule.forFeature([User, Link, Group]), CommonModule],
   controllers: [UserController],
   providers: [UserService],
   exports: [UserService],

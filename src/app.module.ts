@@ -36,7 +36,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
         DB_PASSWORD: Joi.string().required(),
         DB_DATABASE: Joi.string().required(),
         AWS_SECRET_ACCESS_KEY: Joi.string().required(),
-        AWS_ACCESS_KEY_I: Joi.string().required(),
+        AWS_ACCESS_KEY_ID: Joi.string().required(),
         AWS_REGION: Joi.string().required(),
         BUCKET_NAME: Joi.string().required(),
       }),
