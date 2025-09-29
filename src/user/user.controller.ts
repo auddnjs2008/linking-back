@@ -6,8 +6,17 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse, ApiParam } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiParam,
+  ApiConsumes,
+} from '@nestjs/swagger';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
@@ -18,6 +27,19 @@ import { UpdateUserDto } from './dto/update-user.dto';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
+  @Get('me')
+  @ApiOperation({
+    summary: '내 정보 조회',
+  })
+  @ApiResponse({
+    status: 200,
+    description: '내 정보 조회 성공',
+    type: UserResponseDto,
+  })
+  findMe(@CurrentUser() user: { sub: number }) {
+    return this.userService.findOne(user.sub);
+  }
 
   @Get()
   @ApiOperation({
@@ -31,19 +53,6 @@ export class UserController {
   })
   findAll() {
     return this.userService.findAll();
-  }
-
-  @Get('me')
-  @ApiOperation({
-    summary: '내 정보 조회',
-  })
-  @ApiResponse({
-    status: 200,
-    description: '내 정보 조회 성공',
-    type: UserResponseDto,
-  })
-  findMe(@CurrentUser() user: { sub: number }) {
-    return this.userService.findOne(user.sub);
   }
 
   @Get(':id')
@@ -98,5 +107,35 @@ export class UserController {
     @Body() updateUserDto: UpdateUserDto,
   ): Promise<UpdateUserDto> {
     return this.userService.update(updateUserDto, id);
+  }
+
+  @Post('upload-profile-image')
+  @UseInterceptors(FileInterceptor('file'))
+  @ApiOperation({
+    summary: '프로필 이미지 업로드',
+    description: '사용자의 프로필 이미지를 업로드하고 즉시 저장합니다.',
+  })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({
+    status: 201,
+    description: '프로필 이미지 업로드 성공',
+    schema: {
+      type: 'object',
+      properties: {
+        fileName: { type: 'string', description: '업로드된 파일명' },
+        imageUrl: { type: 'string', description: '이미지 URL' },
+        message: { type: 'string', description: '성공 메시지' },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 400,
+    description: '잘못된 요청 또는 존재하지 않는 사용자',
+  })
+  async uploadProfileImage(
+    @UploadedFile() file: Express.Multer.File,
+    @CurrentUser() user: { sub: number },
+  ) {
+    return this.userService.uploadProfileImage(file, user.sub);
   }
 }

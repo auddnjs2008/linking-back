@@ -59,6 +59,30 @@ export class CommonService {
     }
   }
 
+  async uploadProfileImage(file: Express.Multer.File, userId: number) {
+    const bucketName = this.configService.get<string>('BUCKET_NAME');
+    const fileExtension = file.originalname.split('.').pop();
+    const fileName = `profile-${userId}-${Uuid()}.${fileExtension}`;
+    const key = `profile/${fileName}`;
+
+    const params = {
+      Bucket: bucketName,
+      Key: key,
+      Body: file.buffer,
+      ContentType: file.mimetype,
+      ACL: ObjectCannedACL.public_read,
+    };
+
+    try {
+      await this.s3.send(new PutObjectCommand(params));
+      const imageUrl = `https://${bucketName}.s3.${this.configService.get<string>('AWS_REGION')}.amazonaws.com/${key}`;
+      return { fileName, imageUrl };
+    } catch (error) {
+      console.log(error);
+      throw new InternalServerErrorException('프로필 이미지 업로드 실패');
+    }
+  }
+
   applyPagePagination<T>(qb: SelectQueryBuilder<T>, dto: PagePaginationDto) {
     const { page, take } = dto;
     const skip = (page - 1) * take;

@@ -72,20 +72,10 @@ export class UserService {
     //--------이름 변경 --------------------------------
     const newName = updateUserDto.name ?? user.name;
 
-    //--------프로필 사진 변경 --------------------------
-
-    let newProfile = null;
-    if (updateUserDto.tempFileName) {
-      await this.commonService.saveMovieToPermanentStorage(
-        updateUserDto.tempFileName,
-      );
-      newProfile = `https://${this.configService.get<string>('BUCKET_NAME')}.s3.region.amazonaws.com/profile/${updateUserDto.tempFileName}`;
-    }
-
     //-----------------------------------------------
     await this.userRepository.update(
       { id: userId },
-      { name: newName, profile: newProfile, password: newPassword },
+      { name: newName, password: newPassword },
     );
 
     // 업데이트된 사용자 정보 반환
@@ -107,6 +97,51 @@ export class UserService {
     }
 
     return user;
+  }
+
+  async uploadProfileImage(file: Express.Multer.File, userId: number) {
+    // 파일 존재 여부 확인
+    if (!file) {
+      throw new BadRequestException('파일이 선택되지 않았습니다.');
+    }
+
+    // 이미지 파일만 허용
+    const allowedMimeTypes = [
+      'image/jpeg',
+      'image/png',
+      'image/gif',
+      'image/webp',
+    ];
+    if (!allowedMimeTypes.includes(file.mimetype)) {
+      throw new BadRequestException('이미지 파일만 업로드 가능합니다.');
+    }
+
+    // 파일 크기 제한 (5MB)
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      throw new BadRequestException('파일 크기는 5MB를 초과할 수 없습니다.');
+    }
+
+    // 사용자 존재 여부 확인
+    const user = await this.userRepository.findOne({ where: { id: userId } });
+    if (!user) {
+      throw new BadRequestException('존재하지 않는 유저입니다.');
+    }
+
+    // S3에 이미지 업로드
+    const { fileName, imageUrl } = await this.commonService.uploadProfileImage(
+      file,
+      userId,
+    );
+
+    // 사용자 프로필 이미지 URL 업데이트
+    await this.userRepository.update({ id: userId }, { profile: imageUrl });
+
+    return {
+      fileName,
+      imageUrl,
+      message: '프로필 이미지가 성공적으로 업로드되었습니다.',
+    };
   }
 
   async findUserStats(userId: number) {
