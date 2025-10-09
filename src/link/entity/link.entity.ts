@@ -3,6 +3,7 @@ import User from 'src/user/entity/user.entity';
 import {
   Column,
   Entity,
+  JoinTable,
   ManyToMany,
   ManyToOne,
   OneToMany,
@@ -11,6 +12,7 @@ import {
 import { LinkUserBookmark } from './link-user-bookmark.entity';
 import { LinkComment } from 'src/linkComment/entity/linkComment.entity';
 import { Group } from 'src/group/entity/group.entity';
+import { Tag } from 'src/tag/entity/tag.entity';
 
 @Entity()
 export class Link extends BaseTable {
@@ -29,8 +31,9 @@ export class Link extends BaseTable {
   @Column()
   thumbnail: string;
 
-  @Column('simple-array', { default: [] })
-  tags: string[];
+  @ManyToMany(() => Tag, (tag) => tag.links)
+  @JoinTable()
+  tags: Tag[];
 
   @ManyToOne(() => User, (user) => user.createdLinks, {
     onDelete: 'CASCADE',

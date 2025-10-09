@@ -19,6 +19,8 @@ import { GroupModule } from './group/group.module';
 import { LinkCommentModule } from './linkComment/linkComment.module';
 import { GroupUserBookmark } from './group/entity/group-user-bookmark.entity';
 import { LinkComment } from './linkComment/entity/linkComment.entity';
+import { Tag } from './tag/entity/tag.entity';
+import { TagModule } from './tag/tag.module';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthGuard } from './auth/guard/Auth.guard';
 
@@ -56,6 +58,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
           Group,
           GroupUserBookmark,
           LinkComment,
+          Tag,
         ],
         synchronize: true,
       }),
@@ -66,6 +69,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
     LinkModule,
     GroupModule,
     LinkCommentModule,
+    TagModule,
   ],
   controllers: [],
   providers: [

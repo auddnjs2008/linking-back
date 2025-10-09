@@ -7,11 +7,14 @@ import User from 'src/user/entity/user.entity';
 import { CommonModule } from 'src/common/common.module';
 import { LinkUserBookmark } from './entity/link-user-bookmark.entity';
 import { Group } from 'src/group/entity/group.entity';
+import { Tag } from 'src/tag/entity/tag.entity';
+import { TagModule } from 'src/tag/tag.module';
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Link, User, LinkUserBookmark, Group]),
+    TypeOrmModule.forFeature([Link, User, LinkUserBookmark, Group, Tag]),
     CommonModule,
+    TagModule,
   ],
   providers: [LinkService],
   controllers: [LinkController],

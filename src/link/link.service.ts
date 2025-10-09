@@ -9,6 +9,7 @@ import PagePaginationDto from 'src/common/dto/page-pagination.dto';
 import { CommonService } from 'src/common/common.service';
 import { CursorPagePaginationDto } from 'src/common/dto/cursor-pagination.dto';
 import { LinkUserBookmark } from './entity/link-user-bookmark.entity';
+import { TagService } from 'src/tag/tag.service';
 
 @Injectable()
 export class LinkService {
@@ -20,12 +21,22 @@ export class LinkService {
     @InjectRepository(LinkUserBookmark)
     private readonly linkUserBookMarkRepository: Repository<LinkUserBookmark>,
     private readonly commonService: CommonService,
+    private readonly tagService: TagService,
   ) {}
 
   async findAll() {
-    // return this.linkRepository.find({ relations: ['user'] });
-    const qb = this.linkRepository.createQueryBuilder();
-    return qb.leftJoinAndSelect('link.user', 'user').getMany();
+    // return this.linkRepository.find({ relations: ['user', 'tags'] });
+    const qb = this.linkRepository.createQueryBuilder('link');
+    const links = await qb
+      .leftJoinAndSelect('link.user', 'user')
+      .leftJoinAndSelect('link.tags', 'tags')
+      .getMany();
+
+    // 프론트엔드에 tags를 string[]로 반환
+    return links.map((link) => ({
+      ...link,
+      tags: link.tags ? link.tags.map((tag) => tag.name) : [],
+    }));
   }
 
   async findByPagination(pagePaginationDto: PagePaginationDto) {
@@ -33,13 +44,20 @@ export class LinkService {
 
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
+    qb.leftJoinAndSelect('link.tags', 'tags');
 
     this.commonService.applyPagePagination(qb, pagePaginationDto);
 
     const [links, total] = await qb.getManyAndCount();
 
+    // 프론트엔드에 tags를 string[]로 반환
+    const formattedLinks = links.map((link) => ({
+      ...link,
+      tags: link.tags ? link.tags.map((tag) => tag.name) : [],
+    }));
+
     return {
-      data: links,
+      data: formattedLinks,
       meta: {
         page,
         take,
@@ -54,6 +72,7 @@ export class LinkService {
   async findByCursorPagination(dto: CursorPagePaginationDto, userId: number) {
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
+    qb.leftJoinAndSelect('link.tags', 'tags');
 
     // 북마크 여부를 서브쿼리로 체크 (성능 향상)
     qb.addSelect(
@@ -100,7 +119,7 @@ export class LinkService {
       linkUrl: item.linkUrl,
       thumbnail: item.thumbnail,
       author: item.user,
-      tags: item.tags,
+      tags: item.tags ? item.tags.map((tag) => tag.name) : [],
       isBookmarked: item.isBookmarked || false,
     }));
 
@@ -130,6 +149,7 @@ export class LinkService {
 
     // 기본 JOIN
     qb.leftJoinAndSelect('link.user', 'user');
+    qb.leftJoinAndSelect('link.tags', 'tags');
 
     // 북마크 여부를 서브쿼리로 체크 (성능 향상)
     qb.addSelect(
@@ -176,7 +196,7 @@ export class LinkService {
       linkUrl: item.linkUrl,
       thumbnail: item.thumbnail,
       author: item.user,
-      tags: item.tags,
+      tags: item.tags ? item.tags.map((tag) => tag.name) : [],
       isBookmarked: item.isBookmarked || false,
     }));
 
@@ -195,10 +215,11 @@ export class LinkService {
   async findOne(id: number, userId: number) {
     // return this.linkRepository.findOne({
     //   where: { id },
-    //   relations: ['user'],
+    //   relations: ['user', 'tags'],
     // });
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
+    qb.leftJoinAndSelect('link.tags', 'tags');
 
     qb.addSelect(
       `(SELECT lub."isBookmarked" FROM link_user_bookmark lub 
@@ -219,8 +240,10 @@ export class LinkService {
     }
 
     // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
+    const link = rawResults.entities[0];
     const detail_link = {
-      ...rawResults.entities[0],
+      ...link,
+      tags: link.tags ? link.tags.map((tag) => tag.name) : [],
       isBookmarked: rawResults.raw[0]?.isBookmarked || false,
     };
 
@@ -236,15 +259,31 @@ export class LinkService {
     //썸네일 추출 서비스 호출
     const thumbnail = await this.extractThumbnail(createLinkDto.linkUrl);
 
+    // 태그 처리: 태그 이름 배열을 Tag 엔티티 배열로 변환
+    // (findOrCreateTags 안에서 자동으로 usageCount 증가 처리됨)
+    let tags = [];
+    if (createLinkDto.tags && createLinkDto.tags.length > 0) {
+      tags = await this.tagService.findOrCreateTags(createLinkDto.tags);
+    }
+
     // create()로 엔티티 인스턴스 생성
     const newLink = this.linkRepository.create({
-      ...createLinkDto,
+      title: createLinkDto.title,
+      description: createLinkDto.description,
+      linkUrl: createLinkDto.linkUrl,
       user,
       thumbnail,
+      tags,
     });
 
-    // save()로 데이터베이스에 저장
-    return this.linkRepository.save(newLink);
+    // save()로 데이터베이스에 저장 (ManyToMany 관계도 함께 저장됨)
+    const savedLink = await this.linkRepository.save(newLink);
+
+    // 프론트엔드에 tags를 string[]로 반환
+    return {
+      ...savedLink,
+      tags: savedLink.tags ? savedLink.tags.map((tag) => tag.name) : [],
+    };
   }
 
   private async extractThumbnail(url: string): Promise<string> {
@@ -270,7 +309,10 @@ export class LinkService {
   }
 
   async update(updateLinkDto: UpdateLinkDto, id: number) {
-    const link = await this.linkRepository.findOne({ where: { id } });
+    const link = await this.linkRepository.findOne({
+      where: { id },
+      relations: ['tags'],
+    });
     if (!link) {
       throw new BadRequestException('일치하는 링크 아이디가 없습니다.');
     }
@@ -280,19 +322,76 @@ export class LinkService {
         ? await this.extractThumbnail(updateLinkDto.linkUrl)
         : link.thumbnail;
 
-    await this.linkRepository.update(
-      { id },
-      { ...updateLinkDto, thumbnail: updateThumbnail },
-    );
+    // 태그 업데이트 처리
+    if (updateLinkDto.tags !== undefined) {
+      // 기존 태그들의 ID 저장
+      const oldTagIds = link.tags.map((tag) => tag.id);
 
-    const newLink = await this.linkRepository.findOne({ where: { id } });
-    return newLink;
+      // 새로운 태그들 생성/조회 (autoIncrement: false로 설정)
+      const newTags =
+        updateLinkDto.tags.length > 0
+          ? await this.tagService.findOrCreateTags(updateLinkDto.tags, false)
+          : [];
+      const newTagIds = newTags.map((tag) => tag.id);
+
+      // 링크 업데이트 (태그 포함)
+      link.title = updateLinkDto.title ?? link.title;
+      link.description = updateLinkDto.description ?? link.description;
+      link.linkUrl = updateLinkDto.linkUrl ?? link.linkUrl;
+      link.thumbnail = updateThumbnail;
+      link.tags = newTags;
+
+      await this.linkRepository.save(link);
+
+      // 기존 태그 중 더 이상 사용하지 않는 태그의 usageCount 감소
+      const removedTagIds = oldTagIds.filter((id) => !newTagIds.includes(id));
+      if (removedTagIds.length > 0) {
+        await this.tagService.decrementUsageCount(removedTagIds);
+      }
+
+      // 새로 추가된 태그의 usageCount 증가
+      const addedTagIds = newTagIds.filter((id) => !oldTagIds.includes(id));
+      if (addedTagIds.length > 0) {
+        await this.tagService.incrementUsageCount(addedTagIds);
+      }
+    } else {
+      // 태그 업데이트가 없는 경우, 기본 필드만 업데이트
+      await this.linkRepository.update(
+        { id },
+        {
+          title: updateLinkDto.title,
+          description: updateLinkDto.description,
+          linkUrl: updateLinkDto.linkUrl,
+          thumbnail: updateThumbnail,
+        },
+      );
+    }
+
+    const updatedLink = await this.linkRepository.findOne({
+      where: { id },
+      relations: ['tags'],
+    });
+
+    // 프론트엔드에 tags를 string[]로 반환
+    return {
+      ...updatedLink,
+      tags: updatedLink.tags ? updatedLink.tags.map((tag) => tag.name) : [],
+    };
   }
 
   async delete(id: number) {
-    const link = await this.linkRepository.findOne({ where: { id } });
+    const link = await this.linkRepository.findOne({
+      where: { id },
+      relations: ['tags'],
+    });
     if (!link) {
       throw new BadRequestException('일치하는 링크가 없습니다.');
+    }
+
+    // 연결된 태그들의 usageCount 감소
+    if (link.tags && link.tags.length > 0) {
+      const tagIds = link.tags.map((tag) => tag.id);
+      await this.tagService.decrementUsageCount(tagIds);
     }
 
     await this.linkRepository.delete(id);
