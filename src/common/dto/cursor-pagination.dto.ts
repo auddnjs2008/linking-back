@@ -52,4 +52,8 @@ export class CursorPagePaginationDto {
     return value;
   })
   hasThumbnail?: boolean;
+
+  @IsOptional()
+  @IsString()
+  tagKeyword?: string;
 }

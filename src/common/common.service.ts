@@ -150,6 +150,10 @@ export class CommonService {
         qb.andWhere("link.thumbnail IS NULL OR link.thumbnail = ''");
       }
     }
+
+    if (dto.tagKeyword !== undefined) {
+      qb.andWhere('tags.name = :tagKeyword', { tagKeyword: dto.tagKeyword });
+    }
   }
 
   applyGroupFilters<T>(
