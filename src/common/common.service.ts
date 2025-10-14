@@ -154,6 +154,10 @@ export class CommonService {
     if (dto.tagKeyword !== undefined) {
       qb.andWhere('tags.name = :tagKeyword', { tagKeyword: dto.tagKeyword });
     }
+
+    if (dto.createdByMe === true) {
+      qb.andWhere('user.id = :currentUserId', { currentUserId });
+    }
   }
 
   applyGroupFilters<T>(
@@ -190,6 +194,10 @@ export class CommonService {
         );
       }
       qb.setParameter('currentUserId', currentUserId);
+    }
+
+    if (dto.createdByMe === true) {
+      qb.andWhere('user.id = :currentUserId', { currentUserId });
     }
   }
 }

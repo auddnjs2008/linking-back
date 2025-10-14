@@ -173,6 +173,7 @@ export class GroupService {
     qb.leftJoinAndSelect('group.user', 'user')
       .leftJoinAndSelect('group.linkedLinks', 'linkedLinks')
       .leftJoinAndSelect('linkedLinks.user', 'linkedLinksUser')
+      .leftJoinAndSelect('linkedLinks.tags', 'linkedLinksTags')
       .leftJoinAndSelect('group.bookmarkedUsers', 'bookmarkedUsers')
       .leftJoinAndSelect('bookmarkedUsers.user', 'bookmarkedUsersUser')
       .where('group.id = :groupId', { groupId });
@@ -211,7 +212,8 @@ export class GroupService {
     group.linkedLinks = group.linkedLinks.map((link, index) => ({
       ...link,
       isBookmarked: rawResults.raw[index]?.linkIsBookmarked || false,
-    }));
+      tags: link.tags?.map((tag) => tag.name) || [],
+    })) as any;
 
     return group;
   }
