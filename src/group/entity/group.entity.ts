@@ -23,6 +23,9 @@ export class Group extends BaseTable {
   @Column()
   description: string;
 
+  @Column({ default: 0 })
+  views: number;
+
   @ManyToOne(() => User, (user) => user.createdGroups, {
     onDelete: 'CASCADE',
   })

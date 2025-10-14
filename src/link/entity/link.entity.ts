@@ -31,6 +31,9 @@ export class Link extends BaseTable {
   @Column()
   thumbnail: string;
 
+  @Column({ default: 0 })
+  views: number;
+
   @ManyToMany(() => Tag, (tag) => tag.links)
   @JoinTable()
   tags: Tag[];

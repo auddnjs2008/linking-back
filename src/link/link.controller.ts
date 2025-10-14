@@ -135,7 +135,6 @@ export class LinkController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() currentUser: { sub: number },
   ) {
-    console.log(id, 'linkId');
     return this.linkService.findOne(id, currentUser.sub);
   }
 

@@ -200,6 +200,8 @@ export class GroupService {
 
     const rawResults = await qb.getRawAndEntities();
 
+    await this.groupRepository.increment({ id: groupId }, 'views', 1);
+
     if (!rawResults.entities[0]) {
       throw new BadRequestException('해당 그룹을 찾을 수 없습니다.');
     }

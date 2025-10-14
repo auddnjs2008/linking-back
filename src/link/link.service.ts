@@ -213,10 +213,6 @@ export class LinkService {
   }
 
   async findOne(id: number, userId: number) {
-    // return this.linkRepository.findOne({
-    //   where: { id },
-    //   relations: ['user', 'tags'],
-    // });
     const qb = this.linkRepository.createQueryBuilder('link');
     qb.leftJoinAndSelect('link.user', 'user');
     qb.leftJoinAndSelect('link.tags', 'tags');
@@ -241,6 +237,10 @@ export class LinkService {
 
     // 엔티티와 raw 데이터를 매핑하여 isBookmarked 포함
     const link = rawResults.entities[0];
+
+    // 조회수 증가
+    await this.linkRepository.increment({ id }, 'views', 1);
+
     const detail_link = {
       ...link,
       tags: link.tags ? link.tags.map((tag) => tag.name) : [],
