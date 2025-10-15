@@ -132,6 +132,11 @@ export class GroupController {
     );
   }
 
+  @Get('/popular')
+  findPopularGroup() {
+    return this.groupService.findPopularGroup();
+  }
+
   @Post()
   @ApiOperation({
     summary: '그룹 생성',

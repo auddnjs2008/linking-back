@@ -177,6 +177,11 @@ export class LinkController {
     );
   }
 
+  @Get('/popular')
+  findPopularLink() {
+    return this.linkService.findPopularLink();
+  }
+
   @Post()
   @ApiOperation({
     summary: '링크 생성',

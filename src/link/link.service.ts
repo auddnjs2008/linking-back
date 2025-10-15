@@ -250,6 +250,24 @@ export class LinkService {
     return detail_link;
   }
 
+  async findPopularLink() {
+    const qb = this.linkRepository.createQueryBuilder('link');
+
+    qb.leftJoinAndSelect('link.user', 'user')
+      .leftJoinAndSelect('link.tags', 'tags')
+      .leftJoin('link.bookmarkedUsers', 'bookmark')
+      .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
+      .groupBy('link.id')
+      .addGroupBy('user.id')
+      .addGroupBy('tags.id')
+      .addSelect('COUNT(bookmark.linkId)', 'bookmarkCount')
+      .orderBy('bookmarkCount', 'DESC')
+      .addOrderBy('link.views', 'DESC')
+      .limit(10);
+
+    return qb.getMany();
+  }
+
   async create(createLinkDto: CreateLinkDto, userId: number) {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) {

@@ -220,6 +220,22 @@ export class GroupService {
     return group;
   }
 
+  async findPopularGroup() {
+    const qb = this.groupRepository.createQueryBuilder('group');
+
+    qb.leftJoinAndSelect('group.user', 'user')
+      .leftJoinAndSelect('group.bookmarkedUsers', 'bookmark')
+      .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
+      .groupBy('group.id')
+      .addGroupBy('user.id')
+      .addSelect('COUNT(bookmark.groupId)', 'bookmarkCount')
+      .orderBy('bookmarkCount', 'DESC')
+      .addOrderBy('group.views', 'DESC')
+      .limit(10);
+
+    return qb.getMany();
+  }
+
   async create(dto: CreateGroupDto, userId: number) {
     const { title, description, linkIds } = dto;
 
