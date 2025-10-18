@@ -251,21 +251,34 @@ export class LinkService {
   }
 
   async findPopularLink() {
-    const qb = this.linkRepository.createQueryBuilder('link');
-
-    qb.leftJoinAndSelect('link.user', 'user')
-      .leftJoinAndSelect('link.tags', 'tags')
+    // 먼저 북마크 수가 많은 링크 ID들을 조회
+    const popularLinkIds = await this.linkRepository
+      .createQueryBuilder('link')
       .leftJoin('link.bookmarkedUsers', 'bookmark')
       .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
       .groupBy('link.id')
-      .addGroupBy('user.id')
-      .addGroupBy('tags.id')
       .addSelect('COUNT(bookmark.linkId)', 'bookmarkCount')
-      .orderBy('bookmarkCount', 'DESC')
+      .orderBy('COUNT(bookmark.linkId)', 'DESC')
       .addOrderBy('link.views', 'DESC')
-      .limit(10);
+      .limit(10)
+      .getRawMany();
 
-    return qb.getMany();
+    if (popularLinkIds.length === 0) {
+      return [];
+    }
+
+    const linkIds = popularLinkIds.map((item) => item.link_id);
+
+    // 해당 링크들의 상세 정보를 조회
+    return this.linkRepository
+      .createQueryBuilder('link')
+      .leftJoinAndSelect('link.user', 'user')
+      .leftJoinAndSelect('link.tags', 'tags')
+      .leftJoinAndSelect('link.bookmarkedUsers', 'bookmark')
+      .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
+      .whereInIds(linkIds)
+      .orderBy('link.views', 'DESC')
+      .getMany();
   }
 
   async create(createLinkDto: CreateLinkDto, userId: number) {

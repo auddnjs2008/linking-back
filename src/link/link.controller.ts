@@ -123,6 +123,11 @@ export class LinkController {
     return this.linkService.findByCursorPagination(searchLinkDto, user.sub);
   }
 
+  @Get('/popular')
+  findPopularLink() {
+    return this.linkService.findPopularLink();
+  }
+
   @Get('/:id')
   @ApiOperation({
     summary: '링크 상세 조회',
@@ -175,11 +180,6 @@ export class LinkController {
       userId,
       currentUser,
     );
-  }
-
-  @Get('/popular')
-  findPopularLink() {
-    return this.linkService.findPopularLink();
   }
 
   @Post()

@@ -6,12 +6,26 @@ import { ObjectCannedACL, PutObjectCommand, S3 } from '@aws-sdk/client-s3';
 import { ConfigService } from '@nestjs/config';
 import { v4 as Uuid } from 'uuid';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Link } from 'src/link/entity/link.entity';
+import { Group } from 'src/group/entity/group.entity';
+import User from 'src/user/entity/user.entity';
+import { StatsResponseDto } from './dto/stats-response.dto';
 
 @Injectable()
 export class CommonService {
   private s3: S3;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(Link)
+    private readonly linkRepository: Repository<Link>,
+    @InjectRepository(Group)
+    private readonly groupRepository: Repository<Group>,
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {
     this.s3 = new S3({
       credentials: {
         accessKeyId: configService.get<string>('AWS_ACCESS_KEY_ID'),
@@ -199,5 +213,37 @@ export class CommonService {
     if (dto.createdByMe === true) {
       qb.andWhere('user.id = :currentUserId', { currentUserId });
     }
+  }
+
+  /**
+   * 전체 시스템 통계 조회
+   */
+  async getStats(): Promise<StatsResponseDto> {
+    // 오늘 날짜 계산
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    // 병렬로 모든 통계 조회
+    const [totalLinks, totalGroups, totalUsers, addedToday] = await Promise.all(
+      [
+        this.linkRepository.count(),
+        this.groupRepository.count(),
+        this.userRepository.count(),
+        this.linkRepository
+          .createQueryBuilder('link')
+          .where('link.createdAt >= :today', { today })
+          .andWhere('link.createdAt < :tomorrow', { tomorrow })
+          .getCount(),
+      ],
+    );
+
+    return {
+      totalLinks,
+      totalGroups,
+      totalUsers,
+      addedToday,
+    };
   }
 }

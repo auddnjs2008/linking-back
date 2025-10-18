@@ -72,6 +72,11 @@ export class GroupController {
     );
   }
 
+  @Get('/popular')
+  findPopularGroup() {
+    return this.groupService.findPopularGroup();
+  }
+
   @Get('/:id')
   @ApiOperation({
     summary: '그룹 상세 조회',
@@ -130,11 +135,6 @@ export class GroupController {
       userId,
       currentUser,
     );
-  }
-
-  @Get('/popular')
-  findPopularGroup() {
-    return this.groupService.findPopularGroup();
   }
 
   @Post()

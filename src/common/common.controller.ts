@@ -2,13 +2,17 @@ import {
   BadRequestException,
   Body,
   Controller,
+  Get,
   Post,
   UploadedFile,
   UseInterceptors,
 } from '@nestjs/common';
 import { CommonService } from './common.service';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { StatsResponseDto } from './dto/stats-response.dto';
 
+@ApiTags('공통')
 @Controller('common')
 export class CommonController {
   constructor(private readonly commonService: CommonService) {}
@@ -47,5 +51,16 @@ export class CommonController {
         fileType.toLowerCase(),
       ),
     };
+  }
+
+  @Get('stats')
+  @ApiOperation({ summary: '전체 시스템 통계 조회' })
+  @ApiResponse({
+    status: 200,
+    description: '통계 조회 성공',
+    type: StatsResponseDto,
+  })
+  async getStats(): Promise<StatsResponseDto> {
+    return this.commonService.getStats();
   }
 }

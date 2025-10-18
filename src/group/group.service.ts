@@ -221,19 +221,34 @@ export class GroupService {
   }
 
   async findPopularGroup() {
-    const qb = this.groupRepository.createQueryBuilder('group');
-
-    qb.leftJoinAndSelect('group.user', 'user')
-      .leftJoinAndSelect('group.bookmarkedUsers', 'bookmark')
+    // 먼저 북마크 수가 많은 그룹 ID들을 조회
+    const popularGroupIds = await this.groupRepository
+      .createQueryBuilder('group')
+      .leftJoin('group.bookmarkedUsers', 'bookmark')
       .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
       .groupBy('group.id')
-      .addGroupBy('user.id')
       .addSelect('COUNT(bookmark.groupId)', 'bookmarkCount')
-      .orderBy('bookmarkCount', 'DESC')
+      .orderBy('COUNT(bookmark.groupId)', 'DESC')
       .addOrderBy('group.views', 'DESC')
-      .limit(10);
+      .limit(10)
+      .getRawMany();
 
-    return qb.getMany();
+    if (popularGroupIds.length === 0) {
+      return [];
+    }
+
+    const groupIds = popularGroupIds.map((item) => item.group_id);
+
+    // 해당 그룹들의 상세 정보를 조회
+    return this.groupRepository
+      .createQueryBuilder('group')
+      .leftJoinAndSelect('group.user', 'user')
+      .leftJoinAndSelect('group.bookmarkedUsers', 'bookmark')
+      .leftJoinAndSelect('group.linkedLinks', 'linkedLinks')
+      .where('bookmark.isBookmarked = :isBookmarked', { isBookmarked: true })
+      .whereInIds(groupIds)
+      .orderBy('group.views', 'DESC')
+      .getMany();
   }
 
   async create(dto: CreateGroupDto, userId: number) {
