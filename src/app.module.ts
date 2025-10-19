@@ -77,7 +77,7 @@ import { AuthGuard } from './auth/guard/Auth.guard';
         const baseConfig = databaseUrl
           ? {
               url: databaseUrl,
-              type: configService.get<string>('DB_TYPE') as 'postgres',
+              type: 'postgres' as const,
             }
           : {
               type: configService.get<string>('DB_TYPE') as 'postgres',
