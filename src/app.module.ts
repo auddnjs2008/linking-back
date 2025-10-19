@@ -75,7 +75,10 @@ import { AuthGuard } from './auth/guard/Auth.guard';
 
         // DATABASE_URL이 있으면 URL을 사용, 없으면 개별 설정 사용
         const baseConfig = databaseUrl
-          ? { url: databaseUrl }
+          ? {
+              url: databaseUrl,
+              type: configService.get<string>('DB_TYPE') as 'postgres',
+            }
           : {
               type: configService.get<string>('DB_TYPE') as 'postgres',
               host: configService.get<string>('DB_HOST'),
