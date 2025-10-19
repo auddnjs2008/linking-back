@@ -60,7 +60,12 @@ import { AuthGuard } from './auth/guard/Auth.guard';
           LinkComment,
           Tag,
         ],
-        synchronize: true,
+        synchronize: configService.get<string>('ENV') === 'prod' ? false : true,
+        ...(configService.get<string>('ENV') === 'prod' && {
+          ssl: {
+            rejectUnauthorized: false,
+          },
+        }),
       }),
       inject: [ConfigService],
     }),
