@@ -152,21 +152,25 @@ export class AuthController {
         );
       }
 
-      //토큰을 쿠키에 저장 (프론트엔드에서 읽을 수 있도록 httpOnly: false)
+      //토큰을 쿠키에 저장 (도메인 간 전달을 위해 설정 최적화)
+      const isProduction = process.env.NODE_ENV === 'production';
+
       res.cookie('accessToken', result.accessToken, {
         httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction, // 프로덕션에서는 HTTPS 필수
+        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
         maxAge: 15 * 60 * 1000, // 15분
         path: '/', // 모든 경로에서 접근 가능
+        // domain 설정은 생략하여 모든 도메인에서 접근 가능하도록 함
       });
 
       res.cookie('refreshToken', result.refreshToken, {
         httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
-        secure: process.env.NODE_ENV === 'production',
-        sameSite: 'lax',
+        secure: isProduction, // 프로덕션에서는 HTTPS 필수
+        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
         maxAge: 7 * 24 * 60 * 60 * 1000, //7일
         path: '/', // 모든 경로에서 접근 가능
+        // domain 설정은 생략하여 모든 도메인에서 접근 가능하도록 함
       });
 
       return this.authService.redirectToSuccess(res);
