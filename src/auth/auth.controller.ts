@@ -153,7 +153,7 @@ export class AuthController {
       }
 
       //토큰을 쿠키에 저장 (도메인 간 전달을 위해 설정 최적화)
-      const isProduction = process.env.NODE_ENV === 'production';
+      const isProduction = process.env.NODE_ENV === 'prod';
 
       res.cookie('accessToken', result.accessToken, {
         httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
