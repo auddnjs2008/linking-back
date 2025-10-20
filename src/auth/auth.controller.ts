@@ -134,7 +134,7 @@ export class AuthController {
       // Google OAuth 인증이 완료되면 req.user에 Google 사용자 정보가 들어있음
       const googleUser = req.user;
       if (!googleUser) {
-        this.authService.redirectToError(
+        return this.authService.redirectToError(
           res,
           'unknown_error',
           'Google 사용자 정보를 가져올 수 없습니다.',
@@ -145,26 +145,28 @@ export class AuthController {
       const result = await this.authService.handleGoogleUser(googleUser);
 
       if (!result || !result.accessToken) {
-        this.authService.redirectToError(
+        return this.authService.redirectToError(
           res,
           'issue_token',
           '토큰 발급에 실패했습니다.',
         );
       }
 
-      //토큰을 쿠키에 저장(httpOnly를 false로 설정)
+      //토큰을 쿠키에 저장 (프론트엔드에서 읽을 수 있도록 httpOnly: false)
       res.cookie('accessToken', result.accessToken, {
-        httpOnly: false,
+        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 15 * 60 * 1000, // 15분
+        path: '/', // 모든 경로에서 접근 가능
       });
 
       res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: false,
+        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
         secure: process.env.NODE_ENV === 'production',
         sameSite: 'lax',
         maxAge: 7 * 24 * 60 * 60 * 1000, //7일
+        path: '/', // 모든 경로에서 접근 가능
       });
 
       return this.authService.redirectToSuccess(res);

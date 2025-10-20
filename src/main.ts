@@ -8,7 +8,8 @@ async function bootstrap() {
 
   // cors 설정
   app.enableCors({
-    origin: ['http://localhost:5173'],
+    origin: ['http://localhost:5173', 'https://linking-front-889n.vercel.app'],
+    credentials: true, // 쿠키 전달을 위해 필요
   });
 
   // Swagger 설정
