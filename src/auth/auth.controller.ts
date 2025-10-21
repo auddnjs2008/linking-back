@@ -164,7 +164,7 @@ export class AuthController {
       console.log('✅ 토큰 발급 성공');
 
       //토큰을 쿠키에 저장 (도메인 간 전달을 위해 설정 최적화)
-      const isProduction = process.env.NODE_ENV === 'prod';
+      const isProduction = process.env.ENV === 'prod';
       console.log(
         '🍪 쿠키 설정 시작 - 환경:',
         isProduction ? 'PRODUCTION' : 'DEVELOPMENT',
