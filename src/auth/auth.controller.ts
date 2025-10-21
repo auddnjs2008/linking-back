@@ -8,6 +8,7 @@ import {
   UseGuards,
   Res,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
@@ -24,7 +25,10 @@ import { Public } from './decorator/public.decorator';
 @ApiTags('인증')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Post('register')
   @Public()
@@ -163,51 +167,12 @@ export class AuthController {
 
       console.log('✅ 토큰 발급 성공');
 
-      //토큰을 쿠키에 저장 (도메인 간 전달을 위해 설정 최적화)
-      const isProduction = process.env.ENV === 'prod';
-      console.log(
-        '🍪 쿠키 설정 시작 - 환경:',
-        isProduction ? 'PRODUCTION' : 'DEVELOPMENT',
-      );
+      // URL 쿼리 파라미터로 토큰 전달
+      const frontendUrl = this.configService.get<string>('FRONTEND_URL');
+      const successUrl = `${frontendUrl}/auth/success?accessToken=${result.accessToken}&refreshToken=${result.refreshToken}`;
 
-      // 프로덕션 환경에서만 도메인 설정
-      const cookieOptions: any = {
-        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
-        secure: isProduction, // 프로덕션에서는 HTTPS 필수
-        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
-        path: '/', // 모든 경로에서 접근 가능
-      };
-
-      // 프로덕션 환경에서만 도메인 설정
-      if (isProduction) {
-        cookieOptions.domain = '.vercel.app'; // Vercel 도메인 설정
-        console.log('🌐 프로덕션 환경 - 도메인 설정:', cookieOptions.domain);
-      } else {
-        console.log('🔧 개발 환경 - 도메인 설정 없음');
-      }
-
-      console.log('📋 쿠키 옵션:', {
-        httpOnly: cookieOptions.httpOnly,
-        secure: cookieOptions.secure,
-        sameSite: cookieOptions.sameSite,
-        path: cookieOptions.path,
-        domain: cookieOptions.domain || '설정 없음',
-      });
-
-      res.cookie('accessToken', result.accessToken, {
-        ...cookieOptions,
-        maxAge: 15 * 60 * 1000, // 15분
-      });
-      console.log('✅ accessToken 쿠키 설정 완료');
-
-      res.cookie('refreshToken', result.refreshToken, {
-        ...cookieOptions,
-        maxAge: 7 * 24 * 60 * 60 * 1000, //7일
-      });
-      console.log('✅ refreshToken 쿠키 설정 완료');
-
-      console.log('🎯 성공 페이지로 리다이렉트 시작');
-      return this.authService.redirectToSuccess(res);
+      console.log('🎯 토큰과 함께 성공 페이지로 리다이렉트:', successUrl);
+      return res.redirect(successUrl);
     } catch (error) {
       console.error('Google Oauth callback error:', error);
 
