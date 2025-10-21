@@ -131,9 +131,14 @@ export class AuthController {
   })
   async googleAuthRedirect(@Req() req, @Res() res: Response) {
     try {
+      console.log('🚀 Google OAuth 콜백 시작');
+
       // Google OAuth 인증이 완료되면 req.user에 Google 사용자 정보가 들어있음
       const googleUser = req.user;
+      console.log('👤 Google 사용자 정보:', googleUser ? '존재함' : '없음');
+
       if (!googleUser) {
+        console.log('❌ Google 사용자 정보 없음 - 에러 리다이렉트');
         return this.authService.redirectToError(
           res,
           'unknown_error',
@@ -141,10 +146,14 @@ export class AuthController {
         );
       }
 
+      console.log('📧 사용자 이메일:', googleUser.email);
+
       // AuthService를 통해 사용자 처리 및 토큰 발급
+      console.log('🔄 사용자 처리 및 토큰 발급 시작');
       const result = await this.authService.handleGoogleUser(googleUser);
 
       if (!result || !result.accessToken) {
+        console.log('❌ 토큰 발급 실패 - 에러 리다이렉트');
         return this.authService.redirectToError(
           res,
           'issue_token',
@@ -152,27 +161,52 @@ export class AuthController {
         );
       }
 
+      console.log('✅ 토큰 발급 성공');
+
       //토큰을 쿠키에 저장 (도메인 간 전달을 위해 설정 최적화)
       const isProduction = process.env.NODE_ENV === 'prod';
+      console.log(
+        '🍪 쿠키 설정 시작 - 환경:',
+        isProduction ? 'PRODUCTION' : 'DEVELOPMENT',
+      );
+
+      // 프로덕션 환경에서만 도메인 설정
+      const cookieOptions: any = {
+        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
+        secure: isProduction, // 프로덕션에서는 HTTPS 필수
+        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
+        path: '/', // 모든 경로에서 접근 가능
+      };
+
+      // 프로덕션 환경에서만 도메인 설정
+      if (isProduction) {
+        cookieOptions.domain = '.vercel.app'; // Vercel 도메인 설정
+        console.log('🌐 프로덕션 환경 - 도메인 설정:', cookieOptions.domain);
+      } else {
+        console.log('🔧 개발 환경 - 도메인 설정 없음');
+      }
+
+      console.log('📋 쿠키 옵션:', {
+        httpOnly: cookieOptions.httpOnly,
+        secure: cookieOptions.secure,
+        sameSite: cookieOptions.sameSite,
+        path: cookieOptions.path,
+        domain: cookieOptions.domain || '설정 없음',
+      });
 
       res.cookie('accessToken', result.accessToken, {
-        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
-        secure: isProduction, // 프로덕션에서는 HTTPS 필수
-        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
+        ...cookieOptions,
         maxAge: 15 * 60 * 1000, // 15분
-        path: '/', // 모든 경로에서 접근 가능
-        // domain 설정은 생략하여 모든 도메인에서 접근 가능하도록 함
       });
+      console.log('✅ accessToken 쿠키 설정 완료');
 
       res.cookie('refreshToken', result.refreshToken, {
-        httpOnly: false, // 프론트엔드에서 읽을 수 있도록 설정
-        secure: isProduction, // 프로덕션에서는 HTTPS 필수
-        sameSite: isProduction ? 'none' : 'lax', // 프로덕션에서는 도메인 간 전달, 개발에서는 lax
+        ...cookieOptions,
         maxAge: 7 * 24 * 60 * 60 * 1000, //7일
-        path: '/', // 모든 경로에서 접근 가능
-        // domain 설정은 생략하여 모든 도메인에서 접근 가능하도록 함
       });
+      console.log('✅ refreshToken 쿠키 설정 완료');
 
+      console.log('🎯 성공 페이지로 리다이렉트 시작');
       return this.authService.redirectToSuccess(res);
     } catch (error) {
       console.error('Google Oauth callback error:', error);
